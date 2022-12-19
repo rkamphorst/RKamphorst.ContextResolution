@@ -1,0 +1,54 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RKamphorst.ContextResolution.Provider", "RKamphorst.ContextResolution.Provider\RKamphorst.ContextResolution.Provider.csproj", "{F25A7010-C7E1-4934-8D50-F34014DCB303}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RKamphorst.ContextResolution.Provider.Test", "RKamphorst.ContextResolution.Provider.Test\RKamphorst.ContextResolution.Provider.Test.csproj", "{517258D7-8BB8-4B45-B741-C08F6C708A59}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RKamphorst.ContextResolution.DependencyInjection", "RKamphorst.ContextResolution.DependencyInjection\RKamphorst.ContextResolution.DependencyInjection.csproj", "{C163D7D8-DE2F-4353-9E72-9E377E732F6F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RKamphorst.ContextResolution.Contract", "RKamphorst.ContextResolution.Contract\RKamphorst.ContextResolution.Contract.csproj", "{B3E7FE5F-5CD7-49F1-8E82-4514188FA37D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RKamphorst.ContextResolution.HttpApi", "RKamphorst.ContextResolution.HttpApi\RKamphorst.ContextResolution.HttpApi.csproj", "{CC256CD1-4E39-4BBF-9348-006764A38A15}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RKamphorst.ContextResolution.HttpApi.Test", "RKamphorst.ContextResolution.HttpApi.Test\RKamphorst.ContextResolution.HttpApi.Test.csproj", "{793469D9-C84A-4CA9-8D62-F3672F7FE35A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F25A7010-C7E1-4934-8D50-F34014DCB303}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F25A7010-C7E1-4934-8D50-F34014DCB303}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F25A7010-C7E1-4934-8D50-F34014DCB303}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F25A7010-C7E1-4934-8D50-F34014DCB303}.Release|Any CPU.Build.0 = Release|Any CPU
+		{517258D7-8BB8-4B45-B741-C08F6C708A59}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{517258D7-8BB8-4B45-B741-C08F6C708A59}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{517258D7-8BB8-4B45-B741-C08F6C708A59}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{517258D7-8BB8-4B45-B741-C08F6C708A59}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C163D7D8-DE2F-4353-9E72-9E377E732F6F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C163D7D8-DE2F-4353-9E72-9E377E732F6F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C163D7D8-DE2F-4353-9E72-9E377E732F6F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C163D7D8-DE2F-4353-9E72-9E377E732F6F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B3E7FE5F-5CD7-49F1-8E82-4514188FA37D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B3E7FE5F-5CD7-49F1-8E82-4514188FA37D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B3E7FE5F-5CD7-49F1-8E82-4514188FA37D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B3E7FE5F-5CD7-49F1-8E82-4514188FA37D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CC256CD1-4E39-4BBF-9348-006764A38A15}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CC256CD1-4E39-4BBF-9348-006764A38A15}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CC256CD1-4E39-4BBF-9348-006764A38A15}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CC256CD1-4E39-4BBF-9348-006764A38A15}.Release|Any CPU.Build.0 = Release|Any CPU
+		{793469D9-C84A-4CA9-8D62-F3672F7FE35A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{793469D9-C84A-4CA9-8D62-F3672F7FE35A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{793469D9-C84A-4CA9-8D62-F3672F7FE35A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{793469D9-C84A-4CA9-8D62-F3672F7FE35A}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <IsPackable>true</IsPackable>
+        <Title>Context Resolution: Http API components</Title>
+        <Authors>Reinder Kamphorst</Authors>
+        <Description>
+            Contains a client for a HTTP API that requests context through 400 responses, 
+            and a HTTP API context source implemnented using that client.
+        </Description>
+        <RepositoryUrl>https://github.com/rkamphorst/RKamphorst.ContextResolution</RepositoryUrl>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Microsoft.Extensions.Http" Version="7.0.0" />
+      <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
+      <PackageReference Include="Nerdbank.GitVersioning" Version="3.3.37">
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        <PrivateAssets>all</PrivateAssets>
+      </PackageReference>
+    </ItemGroup>
+    
+    <ItemGroup>
+      <ProjectReference Include="..\RKamphorst.ContextResolution.Contract\RKamphorst.ContextResolution.Contract.csproj" />
+    </ItemGroup>
+
+</Project>
