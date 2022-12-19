@@ -46,8 +46,8 @@ public class FillContextAsyncShould
             });
         
         var ctx = new JObject();
-        await _sut.FillContextAsync(ctx, new Parameter { IntParameter = 66 }, "https://context-source-uri",
-            _contextProviderMock.Object);
+        await _sut.FillContextAsync(new Parameter { IntParameter = 66 },
+            "https://context-source-uri", ctx, _contextProviderMock.Object, default);
 
         JToken.DeepEquals(ctx, expectCtx).Should().BeTrue();
     }
@@ -65,8 +65,8 @@ public class FillContextAsyncShould
             });
         
         var ctx = JsonConvert.DeserializeObject<JObject>(@"{ ""property"": ""value"" }")!;
-        await _sut.FillContextAsync(ctx, new Parameter { IntParameter = 66 }, "https://context-source-uri",
-            _contextProviderMock.Object);
+        await _sut.FillContextAsync(new Parameter { IntParameter = 66 },
+            "https://context-source-uri", ctx, _contextProviderMock.Object, default);
 
         JToken.DeepEquals(ctx, expectCtx).Should().BeTrue();
     }
@@ -84,8 +84,8 @@ public class FillContextAsyncShould
             });
         
         var ctx = JsonConvert.DeserializeObject<JObject>(@"{ ""property"": [""value""] }")!;
-        await _sut.FillContextAsync(ctx, new Parameter { IntParameter = 66 }, "https://context-source-uri",
-            _contextProviderMock.Object);
+        await _sut.FillContextAsync(new Parameter { IntParameter = 66 },
+            "https://context-source-uri", ctx, _contextProviderMock.Object, default);
 
         JToken.DeepEquals(ctx, expectCtx).Should().BeTrue();
     }
@@ -103,8 +103,8 @@ public class FillContextAsyncShould
             });
         
         var ctx = JsonConvert.DeserializeObject<JObject>(@"{ ""property"": { ""nestedProperty"": [""value"" ] }}")!;
-        await _sut.FillContextAsync(ctx, new Parameter { IntParameter = 66 }, "https://context-source-uri",
-            _contextProviderMock.Object);
+        await _sut.FillContextAsync(new Parameter { IntParameter = 66 },
+            "https://context-source-uri", ctx, _contextProviderMock.Object, default);
 
         JToken.DeepEquals(ctx, expectCtx).Should().BeTrue();
     }
@@ -124,8 +124,8 @@ public class FillContextAsyncShould
             });
         
         var ctx = JsonConvert.DeserializeObject<JObject>(@"{ ""property"": { ""nestedProperty"": [""value"" ] }}")!;
-        await _sut.FillContextAsync(ctx, new Parameter { IntParameter = 66 }, "https://context-source-uri",
-            _contextProviderMock.Object);
+        await _sut.FillContextAsync(new Parameter { IntParameter = 66 },
+            "https://context-source-uri", ctx, _contextProviderMock.Object, default);
 
         JToken.DeepEquals(ctx, expectCtx).Should().BeTrue();
     }
@@ -142,7 +142,7 @@ public class FillContextAsyncShould
         
         _httpMessageHandlerMock
             .Setup(m => m.MockableSendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
-            .Returns(async (HttpRequestMessage m, CancellationToken ct) =>
+            .Returns(async (HttpRequestMessage m, CancellationToken _) =>
             {
                 var mContent = await m.Content!.ReadAsStringAsync(CancellationToken.None);
                 var requestWithContext = JsonConvert.DeserializeObject<RequestWithContext<JObject>>(mContent)!;
@@ -165,8 +165,8 @@ public class FillContextAsyncShould
             });
         
         var ctx = new JObject();
-        await _sut.FillContextAsync(ctx, new Parameter { IntParameter = 66 }, "https://context-source-uri",
-            _contextProviderMock.Object);
+        await _sut.FillContextAsync(new Parameter { IntParameter = 66 },
+            "https://context-source-uri", ctx, _contextProviderMock.Object, default);
 
         JToken.DeepEquals(ctx, expectCtx).Should().BeTrue();
         _httpMessageHandlerMock.Verify(

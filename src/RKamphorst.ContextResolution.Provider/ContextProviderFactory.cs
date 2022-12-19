@@ -119,13 +119,9 @@ public class ContextProviderFactory : IContextProviderFactory
             var contextProvider = new PrivateContextProvider<TParameter>(this, typeof(TContext));
             try
             {
-                await contextSource.FillContextAsync(
-                    contextToFill,
-                    parameter,
+                await contextSource.FillContextAsync(parameter,
                     key,
-                    contextProvider,
-                    cancellationToken
-                );
+                    contextToFill, contextProvider, cancellationToken);
             }
             catch (ContextResolutionException)
             {

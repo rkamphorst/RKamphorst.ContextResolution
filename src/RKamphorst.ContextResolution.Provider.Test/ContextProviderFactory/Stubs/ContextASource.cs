@@ -7,13 +7,14 @@ namespace RKamphorst.ContextResolution.Provider.Test.ContextProviderFactory.Stub
 
 public class ContextASource : IContextSource<Parameter, ContextA>
 {
-    public virtual async Task FillContextAsync(ContextA contextToFill, Parameter parameter, string? key,
+    public virtual async Task FillContextAsync(Parameter parameter, string? key,
+        ContextA result,
         IContextProvider contextProvider, CancellationToken cancellationToken)
     {
         await Task.Delay(TimeSpan.FromMilliseconds(new Random().Next(50)), cancellationToken);
         if (parameter.IsContextBNeededForContextA)
         {
-            contextToFill.B = await contextProvider.GetContextAsync<ContextB>(cancellationToken: cancellationToken);
+            result.B = await contextProvider.GetContextAsync<ContextB>(cancellationToken: cancellationToken);
         }
     }
 }

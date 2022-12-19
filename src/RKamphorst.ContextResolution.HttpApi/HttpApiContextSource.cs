@@ -22,16 +22,18 @@ public class HttpApiContextSource<TParameter> : IContextSource<TParameter, JObje
             HttpApiWithContext<TParameter, JObject>.Create(httpClientFactory, httpClientName, logger);
     }
 
-    public async Task FillContextAsync(JObject contextToFill, TParameter parameter, string? key, IContextProvider contextProvider, CancellationToken cancellationToken = default)
+    public async Task FillContextAsync(TParameter parameter, string? key,
+        JObject result,
+        IContextProvider contextProvider, CancellationToken cancellationToken)
     {
-        var result = await _httpapiWithContext.PostAsync(
+        var resultResponse = await _httpapiWithContext.PostAsync(
             new Uri(key ?? ""),
             parameter, 
             contextProvider,
             cancellationToken
         );
 
-        contextToFill.Merge(result, new JsonMergeSettings
+        result.Merge(resultResponse, new JsonMergeSettings
         {
             MergeArrayHandling = MergeArrayHandling.Concat,
             MergeNullValueHandling = MergeNullValueHandling.Merge,

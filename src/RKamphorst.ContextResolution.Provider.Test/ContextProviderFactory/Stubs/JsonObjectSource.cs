@@ -9,10 +9,12 @@ namespace RKamphorst.ContextResolution.Provider.Test.ContextProviderFactory.Stub
 
 public class JsonObjectSource : IContextSource<Parameter, JsonObject>
 {
-    public virtual async Task FillContextAsync(JsonObject contextToFill, Parameter parameter, string? key, IContextProvider contextProvider,
+    public virtual async Task FillContextAsync(Parameter parameter, string? key,
+        JsonObject result,
+        IContextProvider contextProvider,
         CancellationToken cancellationToken)
     {
         await Task.Delay(TimeSpan.FromMilliseconds(new Random().Next(50)), cancellationToken);
-        contextToFill["parameter"] = JsonSerializer.SerializeToNode(parameter);
+        result["parameter"] = JsonSerializer.SerializeToNode(parameter);
     }
 }
