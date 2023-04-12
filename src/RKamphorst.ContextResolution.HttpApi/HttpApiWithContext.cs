@@ -8,206 +8,171 @@ using RKamphorst.ContextResolution.HttpApi.Dto;
 
 namespace RKamphorst.ContextResolution.HttpApi;
 
-public class HttpApiWithContext<TParameter, TResult> : IHttpapiWithContext<TParameter, TResult>
+public class HttpApiWithContext<TRequest, TResult> : IHttpApiWithContext<TRequest, TResult>
 {
-    public const string DefaultHttpClientName = "HttpApiWithContext";
-
-    public static IHttpapiWithContext<TParameter, TResult> Create<TComponent>(IHttpClientFactory httpClientFactory,
-        string? httpClientName,
-        ILogger<TComponent> logger) =>
-        new HttpApiWithContext<TParameter, TResult>(httpClientFactory, logger,
-            httpClientName ?? typeof(TComponent).Name);
-
-    protected readonly string HttpClientName;
-    
-    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly Func<HttpClient> _createHttpClient;
+    private readonly Uri _uri;
     private readonly ILogger _logger;
 
-    public HttpApiWithContext(IHttpClientFactory httpClientFactory,
-        ILogger<HttpApiWithContext<TParameter, TResult>> logger)
+    public static HttpApiWithContext<TRequest, TResult> Create(
+        IHttpClientFactory httpClientFactory, string httpClientName, Uri uri, ILogger logger) =>
+        new(
+            () => httpClientFactory.CreateClient(httpClientName), uri, logger);
+    
+    public HttpApiWithContext(Func<HttpClient> createHttpClient, Uri uri, ILogger logger)
     {
-        _httpClientFactory = httpClientFactory;
+        _createHttpClient = createHttpClient;
+        _uri = uri;
         _logger = logger;
-        HttpClientName = DefaultHttpClientName;
     }
 
-    private HttpApiWithContext(IHttpClientFactory httpClientFactory,
-        ILogger logger, string httpClientName)
-    {
-        _httpClientFactory = httpClientFactory;
-        _logger = logger;
-        HttpClientName = httpClientName;
-    }
-
-    public async Task<TResult> PostAsync(Uri requestUri,
-        TParameter parameter,
+    public async Task<TResult> PostAsync(
+        TRequest request,
         IContextProvider contextProvider, CancellationToken cancellationToken)
     {
-        var context = new Dictionary<string, object>();
-        
-        while (!cancellationToken.IsCancellationRequested)
+        var context = new Dictionary<ContextKey, object>();
+        while (true)
         {
-
+            cancellationToken.ThrowIfCancellationRequested();
+            
             var content = new StringContent(JsonConvert.SerializeObject(
-                new RequestWithContext<TParameter>
+                new RequestWithContextDto<TRequest>
                 {
-                    Parameter = parameter,
-                    Context = context
+                    Request = request,
+                    Context = context.ToDictionary(
+                        kvp => kvp.Key.Key, 
+                        kvp => kvp.Value
+                        )
                 }, Formatting.None), Encoding.UTF8, MediaTypeNames.Application.Json);
 
-            (ContextAndKey[]? needContext, TResult? result) =
-                await PostInternalAsync(requestUri, content, context, cancellationToken);
+            (NeedContextDto? needContext, TResult? successResult) =
+                await PostInternalAsync(content, context, cancellationToken);
 
-            if (result != null)
+            if (successResult != null)
             {
-                return result;
+                return successResult;
             }
 
             // either result is null or needContext is null, so if we arrive here,
             // needContext is not null
 
-            var fetchedContexts =
+            (ContextKey key, object)[] fetchedContexts =
                 await Task.WhenAll(
-                    needContext!.Select(async cr =>
-                    {
-                        var dictionaryKey = cr.ParsedFromString;
-                        var contextName = cr.ContextName;
-                        var key = cr.Key;
-                        return (dictionaryKey,
-                            await contextProvider.GetContextAsync(contextName, key, cancellationToken));
-                    }));
+                    needContext!.GetRequestedContextKeys().Select(async key => (key,
+                        await contextProvider.GetContextAsync(
+                            key.Name.Key, key.Id, false, cancellationToken
+                        ))).Concat(
 
-            foreach (var (dictionaryKey, fetchedContext) in fetchedContexts)
+                        needContext.GetRequiredContextKeys().Select(async key => (key,
+                            await contextProvider.GetContextAsync(
+                                key.Name.Key, key.Id, true, cancellationToken
+                            )))
+                    )
+                );
+
+            foreach ((ContextKey key, object fetchedContext) in fetchedContexts)
             {
-                context.Add(dictionaryKey, fetchedContext);
+                context.Add(key, fetchedContext);
             }
         }
-
-        throw new OperationCanceledException();
     }
 
-    private async Task<(ContextAndKey[]? NeedContext, TResult? Result)>
-        PostInternalAsync(Uri requestUri, HttpContent content, Dictionary<string, object> context,
+    private async Task<(NeedContextDto?, TResult?)> PostInternalAsync(
+        HttpContent content, Dictionary<ContextKey, object> context,
             CancellationToken cancellationToken)
     {
-        var client = _httpClientFactory.CreateClient(HttpClientName);
-        var response = await client.PostAsync(requestUri, content, cancellationToken);
+        HttpResponseMessage response = await _createHttpClient().PostAsync(_uri, content, cancellationToken);
 
         if (response.IsSuccessStatusCode)
         {
-            var result = (
-                NeedContext: (ContextAndKey[]?)null,
-                Result: await HandleSuccessResponseAsync(response, cancellationToken)
-            );
-            _logger.LogInformation(
+            TResult result = await HandleSuccessResponseAsync(response, cancellationToken);
+            _logger.LogDebug(
                 "POST to {Uri} was successful with result {@Result}",
-                requestUri, result.Result);
-            return result;
+                _uri, result);
+            return (default, result);
         }
 
         if (response.StatusCode == HttpStatusCode.BadRequest)
         {
-            var result = (
-                NeedContext: await HandleBadRequestResponseAsync(response, context, cancellationToken),
-                Result: default(TResult)
-            );
-            _logger.LogInformation(
+            NeedContextDto needContext = await HandleBadRequestResponseAsync(response, context, cancellationToken);
+            _logger.LogDebug(
                 "POST to {Uri} resulted in request for context(s) {@NeedContext}",
-                requestUri, result.NeedContext);
-            return result;
+                _uri, needContext);
+            return (needContext, default);
         }
 
         _logger.LogWarning(
             "Post to {Uri} failed with status {HttpStatusCode}",
-            requestUri, response.StatusCode);
+            _uri, response.StatusCode);
         throw new HttpRequestException($"Status {response.StatusCode}: {response.ReasonPhrase}", null,
             response.StatusCode);
     }
 
-    /// <summary>
-    /// Handles a bad request
-    /// </summary>
-    /// <remarks>
-    /// If a bad request response meets the following requirements:
-    ///
-    /// 1. The response can be json-deserialized into <see cref="NeedContextResponse"/>
-    /// 2. Property <see cref="NeedContextResponse.NeedContext"/> contains a non-empty list of strings
-    /// 3. All these strings are valid context references (<see cref="ContextAndKey"/>)
-    /// 4. At least one of these context references was not in the already submitted <paramref name="context"/>
-    ///
-    /// Then a list of <see cref="ContextAndKey"/> is returned: references to requested context.
-    ///
-    /// In all other cases, a <see cref="HttpRequestException"/> is thrown with the original status and reason phrase,
-    /// and additionally an explanation why the <see cref="NeedContextResponse"/> was not valid. 
-    /// </remarks>
-    /// <param name="response">Response to parse</param>
-    /// <param name="context">Already submitted context dictionary</param>
-    /// <param name="cancellationToken">Cancellation support</param>
-    /// <returns></returns>
-    private async Task<ContextAndKey[]> HandleBadRequestResponseAsync(
-        HttpResponseMessage response, Dictionary<string, object> context, CancellationToken cancellationToken)
+    private async Task<NeedContextDto> HandleBadRequestResponseAsync(
+        HttpResponseMessage response, Dictionary<ContextKey, object> context, CancellationToken cancellationToken)
     {
         await using Stream stream = await response.Content.ReadAsStreamAsync(cancellationToken);
         using var sr = new StreamReader(stream);
         var stringContent = await sr.ReadToEndAsync();
 
-        NeedContextResponse? needContextResponse;
+        NeedContextDto? needContextResponse;
         try
         {
-            needContextResponse = JsonConvert.DeserializeObject<NeedContextResponse>(stringContent);
+            needContextResponse = JsonConvert.DeserializeObject<NeedContextDto>(stringContent);
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, 
                 "Response with status {HttpStatusCode} " +
-                $"could not be parsed as {nameof(NeedContextResponse)}, throwing exception", response.StatusCode
+                $"could not be parsed as {nameof(NeedContextDto)}, throwing exception", response.StatusCode
             );
             throw new HttpRequestException(
                 $"Status {response.StatusCode}, " +
-                $"response could not be parsed as {nameof(NeedContextResponse)}",
+                $"response could not be parsed as {nameof(NeedContextDto)}",
                 ex, response.StatusCode
             );
         }
 
-        if (!needContextResponse!.IsValid)
+        if (true != needContextResponse?.IsValid)
         {
-            var badContextStrings = needContextResponse.GetBadContextReferenceStrings();
-            _logger.LogWarning(
-                "Response with status {HttpStatusCode}, " +
-                $"{nameof(needContextResponse.NeedContext)} has bad " +
-                "context reference strings: {@NeedContextStrings}, throwing exception",
-                response.StatusCode, badContextStrings);
+            _logger.LogWarning( 
+                "Response with status {HttpStatusCode} " +
+                $"could not be parsed as {nameof(NeedContextDto)}, throwing exception", response.StatusCode
+            );
             throw new HttpRequestException(
                 $"Status {response.StatusCode}, " +
-                $"{nameof(needContextResponse.NeedContext)} has bad " +
-                $"context reference strings: {string.Join(", ", badContextStrings)}",
-                null, response.StatusCode);
+                $"response could not be parsed as {nameof(NeedContextDto)}", null, HttpStatusCode.BadRequest
+            );
         }
 
-        var allContextReferences = needContextResponse.GetContextReferences().ToArray();
+        var allRequestedKeys =
+            needContextResponse.GetRequestedContextKeys()
+                .Concat(needContextResponse.GetRequiredContextKeys())
+                .Distinct().ToArray();
         
-        var result = allContextReferences
-            .Where(cr => !context.ContainsKey(cr.ParsedFromString))
-            .ToArray();
+        ContextKey[] allMissingKeys =
+            allRequestedKeys
+                .Where(key => !context.ContainsKey(key))
+                .ToArray();
 
-        if (result.Length == 0)
+        if (allMissingKeys.Length == 0)
         {
             _logger.LogWarning(
                 "Response with status {HttpStatusCode}, " +
-                $"{nameof(needContextResponse.NeedContext)} has only context references " +
+                $"{nameof(needContextResponse.RequestContext)} has only context references " +
                 "for contexts that were already submitted: {@NeedContextStrings}, throwing exception",
                 response.StatusCode, 
-                allContextReferences.Select(cr => cr.ParsedFromString).ToArray());
+                allRequestedKeys.Select(k => k.Key).ToArray());
 
             throw new HttpRequestException(
                 $"Status {response.StatusCode}, " +
-                $"{nameof(needContextResponse.NeedContext)} has only context references " +
+                $"{nameof(needContextResponse.RequestContext)} has only context references " +
                 "for contexts that were already submitted: " +
-                $"{string.Join(",", allContextReferences.Select(cr => cr.ParsedFromString).ToArray())}",
+                $"{string.Join(",", allRequestedKeys.Select(k => k.Key).ToArray())}",
                 null, response.StatusCode);
         }
 
-        return result;
+        return needContextResponse;
     }
 
     private async Task<TResult> HandleSuccessResponseAsync(HttpResponseMessage response,

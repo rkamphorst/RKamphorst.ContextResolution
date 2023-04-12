@@ -6,12 +6,18 @@ namespace RKamphorst.ContextResolution.Contract;
 public interface IContextSourceProvider
 {
     /// <summary>
-    /// Gets all context sources with parameter type <typeparamref name="TParameter"/> that update
-    /// context of type <typeparamref name="TContext"/>
+    /// Gets all context sources provide context of type <typeparamref name="TContext"/>
     /// </summary>
-    /// <typeparam name="TParameter">Type of parameter the context sources get context for</typeparam>
     /// <typeparam name="TContext">The type of context the context sources provide</typeparam>
-    /// <returns></returns>
-    public IEnumerable<IContextSource<TParameter, TContext>> GetContextSources<TParameter, TContext>()
+    /// <seealso cref="ITypedContextSource{TContext}"/>
+    /// <returns>All typed context sources for <typeparamref name="TContext"/></returns>
+    public IEnumerable<ITypedContextSource<TContext>> GetTypedContextSources<TContext>()
         where TContext : class;
+
+    /// <summary>
+    /// Get all named context sources
+    /// </summary>
+    /// <seealso cref="INamedContextSource"/>
+    /// <returns>All named context sources</returns>
+    public IEnumerable<INamedContextSource> GetNamedContextSources();
 }

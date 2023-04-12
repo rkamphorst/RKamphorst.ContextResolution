@@ -1,6 +1,8 @@
 ﻿using System.Linq.Expressions;
 using System.Net;
 using System.Net.Http.Json;
+using System.Net.Mime;
+using System.Text;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -27,9 +29,13 @@ public class PostAsyncShould
                 It.IsAny<HttpRequestMessage>(),
                 It.IsAny<CancellationToken>());
 
+    private static readonly ContextKey ContextAKey = ContextKey.FromNamedContext("ContextA");
+    private static readonly ContextKey ContextBKey = ContextKey.FromNamedContext("ContextB");
+    private static readonly ContextKey ContextCKey = ContextKey.FromNamedContext("ContextC");
+
     public PostAsyncShould()
     {
-        _contextProviderMock = new Mock<IContextProvider>();
+        _contextProviderMock = new Mock<IContextProvider>(MockBehavior.Strict);
         
         _httpMessageHandlerMock = new Mock<MockableHttpMessageHandler>
         {
@@ -37,15 +43,18 @@ public class PostAsyncShould
         };
 
         var loggerMock = new Mock<ILogger<HttpApiWithContext<Parameter, Result>>>();
-        _sut = new HttpApiWithContext<Parameter, Result>(
+        _sut = HttpApiWithContext<Parameter, Result>.Create(
             new StubHttpClientFactory(_httpMessageHandlerMock.Object),
+            "StubClientName",
+            new Uri("https://http-api-with-context"),
             loggerMock.Object);
+
+
     }
 
     [Fact]
     public async Task PostRequestAndReturnSuccessResult()
     {
-        var postUri = new Uri("https://post-uri");
         var parameter = new Parameter { IntParameter = 66 };
         var expectResult = new Result { IntResult = 66 };
         _httpMessageHandlerMock
@@ -53,10 +62,10 @@ public class PostAsyncShould
             .Returns(async (HttpRequestMessage req, CancellationToken _) =>
             {
                 var requestContentString = await req.Content!.ReadAsStringAsync(default);
-                var r = JsonConvert.DeserializeObject<RequestWithContext<Parameter>>(requestContentString);
+                var r = JsonConvert.DeserializeObject<RequestWithContextDto<Parameter>>(requestContentString);
                 return new HttpResponseMessage
                 {
-                    Content = JsonContent.Create(new Result { IntResult = r!.Parameter!.IntParameter }),
+                    Content = JsonContent.Create(new Result { IntResult = r!.Request!.IntParameter }),
                     RequestMessage = req,
                     StatusCode = HttpStatusCode.OK,
                 };
@@ -65,7 +74,7 @@ public class PostAsyncShould
         
 
         Result result =
-            await _sut.PostAsync(postUri, parameter, _contextProviderMock.Object, CancellationToken.None);
+            await _sut.PostAsync(parameter, _contextProviderMock.Object, CancellationToken.None);
 
         result.Should().BeEquivalentTo(expectResult);
         _httpMessageHandlerMock.Verify(HttpMessageHandlerSendAsync, Times.Once);
@@ -74,21 +83,17 @@ public class PostAsyncShould
     [Fact]
     public async Task ResolveRequestedContext()
     {
-        var requiredContextA = "ContextA";
-        var requiredContextB = "ContextB";
-        var requiredContextC = "ContextC:any:-:key";
-        var postUri = new Uri("https://post-uri");
         var parameter = new Parameter { IntParameter = 66 };
         var expectResult = new Result
             { IntResult = 66, Contexts = new[] { "A", "B", "C" } };
         _contextProviderMock
-            .Setup(p => p.GetContextAsync("ContextA", It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(p => p.GetContextAsync("ContextA", It.IsAny<object>(), false,It.IsAny<CancellationToken>()))
             .ReturnsAsync("A");
         _contextProviderMock
-            .Setup(p => p.GetContextAsync("ContextB", It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(p => p.GetContextAsync("ContextB", It.IsAny<object>(), false, It.IsAny<CancellationToken>()))
             .ReturnsAsync("B");
         _contextProviderMock
-            .Setup(p => p.GetContextAsync("ContextC", "any:-:key", It.IsAny<CancellationToken>()))
+            .Setup(p => p.GetContextAsync("ContextC", It.IsAny<object>(), false, It.IsAny<CancellationToken>()))
             .ReturnsAsync("C");
 
         _httpMessageHandlerMock
@@ -96,30 +101,36 @@ public class PostAsyncShould
             .Returns(async (HttpRequestMessage req, CancellationToken _) =>
             {
                 var requestContentString = await req.Content!.ReadAsStringAsync(default);
-                var r = JsonConvert.DeserializeObject<RequestWithContext<Parameter>>(requestContentString);
+                var r = JsonConvert.DeserializeObject<RequestWithContextDto<Parameter>>(requestContentString);
                 if (r == null)
                     throw new InvalidOperationException();
 
-                if (!(r.Context?.ContainsKey(requiredContextA) ?? false) ||
-                    !(r.Context?.ContainsKey(requiredContextB) ?? false))
+                if (!(r.Context?.ContainsKey(ContextAKey.Key) ?? false) ||
+                    !(r.Context?.ContainsKey(ContextBKey.Key) ?? false))
                 {
                     return new HttpResponseMessage
                     {
                         Content =
-                            JsonContent.Create(new NeedContextResponse
-                                { NeedContext = new[] { requiredContextA, requiredContextB } }),
+                            JsonContent.Create(new NeedContextDto
+                            {
+                                RequestContext =
+                                    new[]{ ContextAKey.Key, ContextBKey.Key}
+                                    
+                            }),
                         RequestMessage = req,
                         StatusCode = HttpStatusCode.BadRequest,
                     };
                 }
-                
-                if (!(r.Context?.ContainsKey(requiredContextC) ?? false))
+
+                if (!(r.Context?.ContainsKey(ContextCKey.Key) ?? false))
                 {
                     return new HttpResponseMessage
                     {
                         Content =
-                            JsonContent.Create(new NeedContextResponse
-                                { NeedContext = new[] { requiredContextC } }),
+                            JsonContent.Create(new NeedContextDto
+                            {
+                                RequestContext = new [] { ContextCKey.Key }
+                            }),
                         RequestMessage = req,
                         StatusCode = HttpStatusCode.BadRequest,
                     };
@@ -128,8 +139,10 @@ public class PostAsyncShould
                 return new HttpResponseMessage
                 {
                     Content = JsonContent.Create(new Result
-                        { IntResult = r.Parameter!.IntParameter, 
-                            Contexts = r.Context.Values.Select(v => v.ToString()).ToArray() }),
+                    {
+                        IntResult = r.Request!.IntParameter,
+                        Contexts = r.Context.Values.Select(v => v.ToString()).ToArray()
+                    }),
                     RequestMessage = req,
                     StatusCode = HttpStatusCode.OK,
                 };
@@ -138,32 +151,113 @@ public class PostAsyncShould
         
 
         Result result =
-            await _sut.PostAsync(postUri, parameter, _contextProviderMock.Object, CancellationToken.None);
+            await _sut.PostAsync(parameter, _contextProviderMock.Object, CancellationToken.None);
 
         result.Should().BeEquivalentTo(expectResult);
         _contextProviderMock
-            .Verify(p => p.GetContextAsync("ContextA", It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+            .Verify(p => p.GetContextAsync("ContextA", It.IsAny<object>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
         _contextProviderMock
-            .Verify(p => p.GetContextAsync("ContextB", It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+            .Verify(p => p.GetContextAsync("ContextB", It.IsAny<object>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
         _contextProviderMock
-            .Verify(p => p.GetContextAsync("ContextC", "any:-:key", It.IsAny<CancellationToken>()), Times.Once);
+            .Verify(p => p.GetContextAsync("ContextC", It.IsAny<object>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
         _httpMessageHandlerMock.Verify(HttpMessageHandlerSendAsync, Times.Exactly(3));
     }
 
     [Fact]
+    public async Task ResolveRequiredContext()
+    {
+        var parameter = new Parameter { IntParameter = 66 };
+        var expectResult = new Result
+            { IntResult = 66, Contexts = new[] { "A", "B", "C" } };
+        _contextProviderMock
+            .Setup(p => p.GetContextAsync("ContextA", It.IsAny<object>(), true,It.IsAny<CancellationToken>()))
+            .ReturnsAsync("A");
+        _contextProviderMock
+            .Setup(p => p.GetContextAsync("ContextB", It.IsAny<object>(), true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync("B");
+        _contextProviderMock
+            .Setup(p => p.GetContextAsync("ContextC", It.IsAny<object>(), false, It.IsAny<CancellationToken>()))
+            .ReturnsAsync("C");
+
+        _httpMessageHandlerMock
+            .Setup(HttpMessageHandlerSendAsync)
+            .Returns(async (HttpRequestMessage req, CancellationToken _) =>
+            {
+                var requestContentString = await req.Content!.ReadAsStringAsync(default);
+                var r = JsonConvert.DeserializeObject<RequestWithContextDto<Parameter>>(requestContentString);
+                if (r == null)
+                    throw new InvalidOperationException();
+
+                if (!(r.Context?.ContainsKey(ContextAKey.Key) ?? false) ||
+                    !(r.Context?.ContainsKey(ContextBKey.Key) ?? false))
+                {
+                    return new HttpResponseMessage
+                    {
+                        Content =
+                            JsonContent.Create(new NeedContextDto
+                            {
+                                RequireContext = 
+                                    new[]{ ContextAKey.Key, ContextBKey.Key}
+                                    
+                            }),
+                        RequestMessage = req,
+                        StatusCode = HttpStatusCode.BadRequest,
+                    };
+                }
+
+                if (!(r.Context?.ContainsKey(ContextCKey.Key) ?? false))
+                {
+                    return new HttpResponseMessage
+                    {
+                        Content =
+                            JsonContent.Create(new NeedContextDto
+                            {
+                                RequestContext = new [] { ContextCKey.Key }
+                            }),
+                        RequestMessage = req,
+                        StatusCode = HttpStatusCode.BadRequest,
+                    };
+                }
+
+                return new HttpResponseMessage
+                {
+                    Content = JsonContent.Create(new Result
+                    {
+                        IntResult = r.Request!.IntParameter,
+                        Contexts = r.Context.Values.Select(v => v.ToString()).ToArray()
+                    }),
+                    RequestMessage = req,
+                    StatusCode = HttpStatusCode.OK,
+                };
+            });
+            
+        
+
+        Result result =
+            await _sut.PostAsync(parameter, _contextProviderMock.Object, CancellationToken.None);
+
+        result.Should().BeEquivalentTo(expectResult);
+        _contextProviderMock
+            .Verify(p => p.GetContextAsync("ContextA", It.IsAny<object>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
+        _contextProviderMock
+            .Verify(p => p.GetContextAsync("ContextB", It.IsAny<object>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
+        _contextProviderMock
+            .Verify(p => p.GetContextAsync("ContextC", It.IsAny<object>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
+        _httpMessageHandlerMock.Verify(HttpMessageHandlerSendAsync, Times.Exactly(3));
+    }
+    
+ 
+    [Fact]
     public async Task ResolveMultipleRequestedContexts()
     {
-        var requiredContextA = "ContextA";
-        var requiredContextB = "ContextB";
-        var postUri = new Uri("https://post-uri");
         var parameter = new Parameter { IntParameter = 66 };
         var expectResult = new Result
             { IntResult = 66, Contexts = new[] { "A", "B" } };
         _contextProviderMock
-            .Setup(p => p.GetContextAsync("ContextA", It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(p => p.GetContextAsync("ContextA", It.IsAny<object>(), It.IsAny<bool>(),It.IsAny<CancellationToken>()))
             .ReturnsAsync("A");
         _contextProviderMock
-            .Setup(p => p.GetContextAsync("ContextB", It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(p => p.GetContextAsync("ContextB", It.IsAny<object>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync("B");
 
         _httpMessageHandlerMock
@@ -171,18 +265,21 @@ public class PostAsyncShould
             .Returns(async (HttpRequestMessage req, CancellationToken _) =>
             {
                 var requestContentString = await req.Content!.ReadAsStringAsync(default);
-                var r = JsonConvert.DeserializeObject<RequestWithContext<Parameter>>(requestContentString);
+                var r = JsonConvert.DeserializeObject<RequestWithContextDto<Parameter>>(requestContentString);
                 if (r == null)
                     throw new InvalidOperationException();
 
-                if (!(r.Context?.ContainsKey(requiredContextA) ?? false) ||
-                    !(r.Context?.ContainsKey(requiredContextB) ?? false))
+                if (!(r.Context?.ContainsKey(ContextAKey.Key) ?? false) ||
+                    !(r.Context?.ContainsKey(ContextBKey.Key) ?? false))
                 {
                     return new HttpResponseMessage
                     {
                         Content =
-                            JsonContent.Create(new NeedContextResponse
-                                { NeedContext = new[] { requiredContextA, requiredContextB } }),
+                            JsonContent.Create(new NeedContextDto
+                            {
+                                RequestContext =
+                                    new[] { ContextAKey.Key, ContextBKey.Key }
+                            }),
                         RequestMessage = req,
                         StatusCode = HttpStatusCode.BadRequest,
                     };
@@ -191,7 +288,7 @@ public class PostAsyncShould
                 return new HttpResponseMessage
                 {
                     Content = JsonContent.Create(new Result
-                        { IntResult = r.Parameter!.IntParameter, 
+                        { IntResult = r.Request!.IntParameter, 
                             Contexts = r.Context.Values.Select(v => v.ToString()).ToArray() }),
                     RequestMessage = req,
                     StatusCode = HttpStatusCode.OK,
@@ -201,44 +298,44 @@ public class PostAsyncShould
         
 
         Result result =
-            await _sut.PostAsync(postUri, parameter, _contextProviderMock.Object, CancellationToken.None);
+            await _sut.PostAsync(parameter, _contextProviderMock.Object, CancellationToken.None);
 
         result.Should().BeEquivalentTo(expectResult);
         _contextProviderMock
-            .Verify(p => p.GetContextAsync("ContextA", It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+            .Verify(p => p.GetContextAsync("ContextA", It.IsAny<object>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
         _contextProviderMock
-            .Verify(p => p.GetContextAsync("ContextB", It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+            .Verify(p => p.GetContextAsync("ContextB", It.IsAny<object>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
         _httpMessageHandlerMock.Verify(HttpMessageHandlerSendAsync, Times.Exactly(2));
     }
 
     [Fact]
     public async Task ResolveSingleRequestedContext()
     {
-        var requiredContextA = "ContextA";
-        var postUri = new Uri("https://post-uri");
         var parameter = new Parameter { IntParameter = 66 };
         var expectResult = new Result
             { IntResult = 66, Contexts = new[] { "A" } };
         _contextProviderMock
-            .Setup(p => p.GetContextAsync("ContextA", It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(p => p.GetContextAsync("ContextA", It.IsAny<object>(), It.IsAny<bool>(),It.IsAny<CancellationToken>()))
             .ReturnsAsync("A");
-
+        
         _httpMessageHandlerMock
             .Setup(HttpMessageHandlerSendAsync)
             .Returns(async (HttpRequestMessage req, CancellationToken _) =>
             {
                 var requestContentString = await req.Content!.ReadAsStringAsync(default);
-                var r = JsonConvert.DeserializeObject<RequestWithContext<Parameter>>(requestContentString);
+                var r = JsonConvert.DeserializeObject<RequestWithContextDto<Parameter>>(requestContentString);
                 if (r == null)
                     throw new InvalidOperationException();
 
-                if (!(r.Context?.ContainsKey(requiredContextA) ?? false))
+                if (!(r.Context?.ContainsKey(ContextAKey.Key) ?? false))
                 {
                     return new HttpResponseMessage
                     {
                         Content =
-                            JsonContent.Create(new NeedContextResponse
-                                { NeedContext = new[] { requiredContextA } }),
+                            JsonContent.Create(new NeedContextDto
+                            {
+                                RequestContext = new[] { ContextAKey.Key }
+                            }),
                         RequestMessage = req,
                         StatusCode = HttpStatusCode.BadRequest,
                     };
@@ -247,7 +344,7 @@ public class PostAsyncShould
                 return new HttpResponseMessage
                 {
                     Content = JsonContent.Create(new Result
-                        { IntResult = r.Parameter!.IntParameter, 
+                        { IntResult = r.Request!.IntParameter, 
                             Contexts = r.Context.Values.Select(v => v.ToString()).ToArray() }),
                     RequestMessage = req,
                     StatusCode = HttpStatusCode.OK,
@@ -257,58 +354,60 @@ public class PostAsyncShould
         
 
         Result result =
-            await _sut.PostAsync(postUri, parameter, _contextProviderMock.Object, CancellationToken.None);
+            await _sut.PostAsync(parameter, _contextProviderMock.Object, CancellationToken.None);
 
         result.Should().BeEquivalentTo(expectResult);
         _contextProviderMock
-            .Verify(p => p.GetContextAsync("ContextA", It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+            .Verify(p => p.GetContextAsync("ContextA", It.IsAny<object>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
         _httpMessageHandlerMock.Verify(HttpMessageHandlerSendAsync, Times.Exactly(2));
     }
 
     [Fact]
     public async Task ResolveChainedRequestedContexts()
     {
-        var requiredContextA = "ContextA";
-        var requiredContextB = "ContextB";
-        var postUri = new Uri("https://post-uri");
         var parameter = new Parameter { IntParameter = 66 };
         var expectResult = new Result
             { IntResult = 66, Contexts = new[] { "A", "B" } };
         _contextProviderMock
-            .Setup(p => p.GetContextAsync("ContextA", It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(p => p.GetContextAsync("ContextA", It.IsAny<object>(), It.IsAny<bool>(),It.IsAny<CancellationToken>()))
             .ReturnsAsync("A");
         _contextProviderMock
-            .Setup(p => p.GetContextAsync("ContextB", It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(p => p.GetContextAsync("ContextB", It.IsAny<object>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync("B");
-
+        
         _httpMessageHandlerMock
             .Setup(HttpMessageHandlerSendAsync)
             .Returns(async (HttpRequestMessage req, CancellationToken _) =>
             {
                 var requestContentString = await req.Content!.ReadAsStringAsync(default);
-                var r = JsonConvert.DeserializeObject<RequestWithContext<Parameter>>(requestContentString);
+                var r = JsonConvert.DeserializeObject<RequestWithContextDto<Parameter>>(requestContentString);
                 if (r == null)
                     throw new InvalidOperationException();
 
-                if (!(r.Context?.ContainsKey(requiredContextA) ?? false))
+                if (!(r.Context?.ContainsKey(ContextAKey.Key) ?? false))
                 {
                     return new HttpResponseMessage
                     {
                         Content =
-                            JsonContent.Create(new NeedContextResponse
-                                { NeedContext = new[] { requiredContextA } }),
+                            JsonContent.Create(new NeedContextDto
+                            {
+                                RequestContext =
+                                    new[] { ContextAKey.Key }
+                            }),
                         RequestMessage = req,
                         StatusCode = HttpStatusCode.BadRequest,
                     };
                 }
                 
-                if (!(r.Context?.ContainsKey(requiredContextB) ?? false))
+                if (!(r.Context?.ContainsKey(ContextBKey.Key) ?? false))
                 {
                     return new HttpResponseMessage
                     {
                         Content =
-                            JsonContent.Create(new NeedContextResponse
-                                { NeedContext = new[] { requiredContextB } }),
+                            JsonContent.Create(new NeedContextDto
+                            {
+                                RequestContext = new[] { ContextBKey.Key }
+                            }),
                         RequestMessage = req,
                         StatusCode = HttpStatusCode.BadRequest,
                     };
@@ -317,7 +416,7 @@ public class PostAsyncShould
                 return new HttpResponseMessage
                 {
                     Content = JsonContent.Create(new Result
-                        { IntResult = r.Parameter!.IntParameter, 
+                        { IntResult = r.Request!.IntParameter, 
                             Contexts = r.Context.Values.Select(v => v.ToString()).ToArray() }),
                     RequestMessage = req,
                     StatusCode = HttpStatusCode.OK,
@@ -327,101 +426,117 @@ public class PostAsyncShould
         
 
         Result result =
-            await _sut.PostAsync(postUri, parameter, _contextProviderMock.Object, CancellationToken.None);
+            await _sut.PostAsync(parameter, _contextProviderMock.Object, CancellationToken.None);
 
         result.Should().BeEquivalentTo(expectResult);
         _contextProviderMock
-            .Verify(p => p.GetContextAsync("ContextA", It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+            .Verify(p => p.GetContextAsync("ContextA", It.IsAny<object>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
         _contextProviderMock
-            .Verify(p => p.GetContextAsync("ContextB", It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+            .Verify(p => p.GetContextAsync("ContextB", It.IsAny<object>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
         _httpMessageHandlerMock.Verify(HttpMessageHandlerSendAsync, Times.Exactly(3));
     }
-
-    [Theory]
-    [InlineData("any:-:key")]
-    [InlineData("simplekey")]
-    [InlineData("simple-key")]
-    [InlineData("https://snappet.org")]
-    public async Task ResolveContextWithKey(string key)
-    {
-        var requiredContextC = $"ContextC:{key}";
-        var postUri = new Uri("https://post-uri");
-        var parameter = new Parameter { IntParameter = 66 };
-        var expectResult = new Result
-            { IntResult = 66, Contexts = new[] { "C" } };
-        _contextProviderMock
-            .Setup(p => p.GetContextAsync("ContextC", key, It.IsAny<CancellationToken>()))
-            .ReturnsAsync("C");
-
-        _httpMessageHandlerMock
-            .Setup(HttpMessageHandlerSendAsync)
-            .Returns(async (HttpRequestMessage req, CancellationToken _) =>
-            {
-                var requestContentString = await req.Content!.ReadAsStringAsync(default);
-                var r = JsonConvert.DeserializeObject<RequestWithContext<Parameter>>(requestContentString);
-                if (r == null)
-                    throw new InvalidOperationException();
-
-                if (!(r.Context?.ContainsKey(requiredContextC) ?? false))
-                {
-                    return new HttpResponseMessage
-                    {
-                        Content =
-                            JsonContent.Create(new NeedContextResponse
-                                { NeedContext = new[] { requiredContextC } }),
-                        RequestMessage = req,
-                        StatusCode = HttpStatusCode.BadRequest,
-                    };
-                }
-
-                return new HttpResponseMessage
-                {
-                    Content = JsonContent.Create(new Result
-                        { IntResult = r.Parameter!.IntParameter, 
-                            Contexts = r.Context.Values.Select(v => v.ToString()).ToArray() }),
-                    RequestMessage = req,
-                    StatusCode = HttpStatusCode.OK,
-                };
-            });
-            
-        
-
-        Result result =
-            await _sut.PostAsync(postUri, parameter, _contextProviderMock.Object, CancellationToken.None);
-
-        result.Should().BeEquivalentTo(expectResult);
-        _contextProviderMock
-            .Verify(p => p.GetContextAsync("ContextC", key, It.IsAny<CancellationToken>()), Times.Once);
-        _httpMessageHandlerMock.Verify(HttpMessageHandlerSendAsync, Times.Exactly(2));
-    }
-
     
     [Fact]
-    public async Task ThrowHttpExceptionIfSubmittedContextIsRequestedAgain()
+    public async Task ThrowIfBadRequestResponseHasNoInformation()
     {
-        var requiredContextA = "ContextA";
-        var postUri = new Uri("https://post-uri");
         var parameter = new Parameter { IntParameter = 66 };
         _contextProviderMock
-            .Setup(p => p.GetContextAsync("ContextA", It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(p => p.GetContextAsync("ContextA", It.IsAny<object>(), It.IsAny<bool>(),It.IsAny<CancellationToken>()))
             .ReturnsAsync("A");
+
 
         _httpMessageHandlerMock
             .Setup(HttpMessageHandlerSendAsync)
-            .ReturnsAsync( (HttpRequestMessage req, CancellationToken _) =>
+            .ReturnsAsync( (HttpRequestMessage req, CancellationToken _) => new HttpResponseMessage
             {
-                return new HttpResponseMessage
-                {
-                    Content =
-                        JsonContent.Create(new NeedContextResponse
-                            { NeedContext = new[] { requiredContextA } }),
-                    RequestMessage = req,
-                    StatusCode = HttpStatusCode.BadRequest,
-                };
+                Content = new StringContent("{}", Encoding.UTF8, MediaTypeNames.Application.Json),
+                RequestMessage = req,
+                StatusCode = HttpStatusCode.BadRequest,
             });
             
         Func<Task> act = 
-            async () => await _sut.PostAsync(postUri, parameter, _contextProviderMock.Object, CancellationToken.None);
+            async () => await _sut.PostAsync(parameter, _contextProviderMock.Object, CancellationToken.None);
+
+        (await act.Should().ThrowAsync<HttpRequestException>())
+            .Where(e => e.StatusCode == HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task ThrowIfBadRequestResponseCannotBeParsed()
+    {
+        var parameter = new Parameter { IntParameter = 66 };
+        _contextProviderMock
+            .Setup(p => p.GetContextAsync("ContextA", It.IsAny<object>(), It.IsAny<bool>(),It.IsAny<CancellationToken>()))
+            .ReturnsAsync("A");
+
+
+        _httpMessageHandlerMock
+            .Setup(HttpMessageHandlerSendAsync)
+            .ReturnsAsync( (HttpRequestMessage req, CancellationToken _) => new HttpResponseMessage
+            {
+                Content = new StringContent("invalid json", Encoding.UTF8, MediaTypeNames.Application.Json),
+                RequestMessage = req,
+                StatusCode = HttpStatusCode.BadRequest,
+            });
+            
+        Func<Task> act = 
+            async () => await _sut.PostAsync(parameter, _contextProviderMock.Object, CancellationToken.None);
+
+        (await act.Should().ThrowAsync<HttpRequestException>())
+            .Where(e => e.StatusCode == HttpStatusCode.BadRequest);
+    }
+    
+    [Theory]
+    [InlineData(HttpStatusCode.Forbidden)]
+    [InlineData(HttpStatusCode.Unauthorized)]
+    [InlineData(HttpStatusCode.BadGateway)]
+    public async Task ThrowIfResponseCodeIsUnrecognized(HttpStatusCode unknownStatusCode)
+    {
+        var parameter = new Parameter { IntParameter = 66 };
+        _contextProviderMock
+            .Setup(p => p.GetContextAsync("ContextA", It.IsAny<object>(), It.IsAny<bool>(),It.IsAny<CancellationToken>()))
+            .ReturnsAsync("A");
+
+
+        _httpMessageHandlerMock
+            .Setup(HttpMessageHandlerSendAsync)
+            .ReturnsAsync( (HttpRequestMessage req, CancellationToken _) => new HttpResponseMessage
+            {
+                RequestMessage = req,
+                StatusCode = unknownStatusCode,
+            });
+            
+        Func<Task> act = 
+            async () => await _sut.PostAsync(parameter, _contextProviderMock.Object, CancellationToken.None);
+
+        (await act.Should().ThrowAsync<HttpRequestException>())
+            .Where(ex => ex.StatusCode == unknownStatusCode);
+    }
+    
+    [Fact]
+    public async Task ThrowIfSubmittedContextIsRequestedAgain()
+    {
+        var parameter = new Parameter { IntParameter = 66 };
+        _contextProviderMock
+            .Setup(p => p.GetContextAsync("ContextA", It.IsAny<object>(), It.IsAny<bool>(),It.IsAny<CancellationToken>()))
+            .ReturnsAsync("A");
+
+
+        _httpMessageHandlerMock
+            .Setup(HttpMessageHandlerSendAsync)
+            .ReturnsAsync( (HttpRequestMessage req, CancellationToken _) => new HttpResponseMessage
+            {
+                Content =
+                    JsonContent.Create(new NeedContextDto
+                    {
+                        RequestContext = new[]{ ContextAKey.Key }
+                    }),
+                RequestMessage = req,
+                StatusCode = HttpStatusCode.BadRequest,
+            });
+            
+        Func<Task> act = 
+            async () => await _sut.PostAsync(parameter, _contextProviderMock.Object, CancellationToken.None);
 
         await act.Should().ThrowAsync<HttpRequestException>();
     }

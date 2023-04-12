@@ -9,14 +9,14 @@ public class ContextSourceNotFoundException : ContextResolutionException
     /// Constructor
     /// </summary>
     /// <param name="contextType">The context type for which no context source was available</param>
-    public ContextSourceNotFoundException(Type contextType) : base(
-        $"No source found for context '{contextType.Name}'")
+    public ContextSourceNotFoundException(ContextName contextName) : base(
+        $"No source found for context '{contextName}'")
     {
-        ContextType = contextType;
+        ContextName = contextName;
     }
 
     /// <summary>
     /// Type of the context for which no source could be found
     /// </summary>
-    public Type ContextType { get; }
+    public ContextName ContextName { get; }
 }

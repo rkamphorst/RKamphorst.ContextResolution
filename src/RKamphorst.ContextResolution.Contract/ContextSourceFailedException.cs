@@ -5,11 +5,11 @@ namespace RKamphorst.ContextResolution.Contract;
 /// </summary>
 public class ContextSourceFailedException : ContextResolutionException
 {
-    public ContextSourceFailedException(string? contextSource, Exception ex) 
-        : base($"Context source '{contextSource}' failed with exception", ex)
+    public ContextSourceFailedException(object contextSource, Exception ex) 
+        : base($"Context source '{contextSource.GetType().FullName}' failed with exception", ex)
     {
         ContextSource = contextSource;
     }
     
-    public string? ContextSource { get; }
+    public object ContextSource { get; }
 }
