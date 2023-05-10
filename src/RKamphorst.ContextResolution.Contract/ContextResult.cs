@@ -1,4 +1,6 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Serialization;
 
 namespace RKamphorst.ContextResolution.Contract;
 
@@ -51,7 +53,7 @@ public class ContextResult
     }
 
     private readonly IEnumerable<object> _partialResults;
-    private object? _result = null;
+    private object? _result;
     
     private ContextResult(ContextName name, IEnumerable<object> partialResults, bool isContextSourceFound, CacheInstruction cacheInstruction)
     {

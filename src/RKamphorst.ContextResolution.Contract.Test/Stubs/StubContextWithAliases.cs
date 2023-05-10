@@ -4,7 +4,7 @@
 [ContextName("alias-2")]
 public class StubContextWithAliases
 {
-    public string? Property { get; set; }
+    public string? AProperty { get; set; }
     
-    public string? Property2 { get; set; }
+    public string? BProperty { get; set; }
 }

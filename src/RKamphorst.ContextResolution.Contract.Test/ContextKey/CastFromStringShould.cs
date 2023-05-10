@@ -23,11 +23,11 @@ public class CastFromStringShould
     [Fact]
     public void CreateTypedKeyFromString()
     {
-        var result = (ContextKey)"{\"alias-1\":{ \"property\": \"value\" }}";
+        var result = (ContextKey)"{\"alias-1\":{ \"aProperty\": \"value\" }}";
         
-        result.Id.Should().BeEquivalentTo(new StubContextWithAliases { Property = "value" });
+        result.Id.Should().BeEquivalentTo(new StubContextWithAliases { AProperty = "value" });
         result.Name.Aliases.Should().BeEquivalentTo(new[] { "StubContextWithAliases", "alias-1", "alias-2" });
-        result.Key.Should().Be("{\"StubContextWithAliases|alias-1|alias-2\":{\"property\":\"value\"}}");
+        result.Key.Should().Be("{\"stubContextWithAliases|alias-1|alias-2\":{\"aProperty\":\"value\"}}");
     }
     
     [Theory]

@@ -21,12 +21,12 @@ public class CastToStringShould
         new object[]
         {
             ContextKey.FromTypedContext(new StubContext()), 
-            "{\"StubContext\":{}}"
+            "{\"stubContext\":{}}"
         },
         new object[]
         {
-            ContextKey.FromTypedContext(new StubContextWithAliases{Property = "x"}), 
-            "{\"StubContextWithAliases|alias-1|alias-2\":{\"property\":\"x\"}}"
+            ContextKey.FromTypedContext(new StubContextWithAliases{AProperty = "x"}), 
+            "{\"stubContextWithAliases|alias-1|alias-2\":{\"aProperty\":\"x\"}}"
         },
         new object[]
         {

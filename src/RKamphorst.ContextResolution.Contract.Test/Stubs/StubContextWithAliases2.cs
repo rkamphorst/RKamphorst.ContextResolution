@@ -5,4 +5,6 @@
 public class StubContextWithAliases2
 {
     public string Property { get; set; }
+    
+    public string AProperty { get; set; }
 }

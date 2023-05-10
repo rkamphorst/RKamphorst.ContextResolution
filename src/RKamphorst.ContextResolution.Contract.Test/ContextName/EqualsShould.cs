@@ -12,21 +12,37 @@ public class EqualsShould
     [MemberData(nameof(EqualGroups))]
     public void ReturnTrueForEqual(ContextName[] equalGroup)
     {
-        for (var i = 1; i < equalGroup.Length; i++)
+        for (var i = 0; i < equalGroup.Length; i++)
         {
-            (equalGroup[0] == equalGroup[i]).Should().BeTrue();
-            (equalGroup[0] != equalGroup[i]).Should().BeFalse();
+            for (var j = 0; j < equalGroup.Length; j++)
+            {
+                equalGroup[i].Should().Be(equalGroup[j]);
+                equalGroup[j].Should().Be(equalGroup[i]);
+                (equalGroup[j] == equalGroup[i]).Should().BeTrue();
+                (equalGroup[j] != equalGroup[i]).Should().BeFalse();
+                (equalGroup[i] == equalGroup[j]).Should().BeTrue();
+                (equalGroup[i] != equalGroup[j]).Should().BeFalse();
+            }
         }
     }
     
     [Theory]
     [MemberData(nameof(UnequalGroups))]
-    public void ReturnTrueForUnequal(ContextName[] unequalGroup)
+    public void ReturnFalseForUnequal(ContextName[] unEqualGroup)
     {
-        for (var i = 1; i < unequalGroup.Length; i++)
+        for (var i = 0; i < unEqualGroup.Length; i++)
         {
-            (unequalGroup[0] == unequalGroup[i]).Should().BeFalse();
-            (unequalGroup[0] != unequalGroup[i]).Should().BeTrue();
+            for (var j = 0; j < unEqualGroup.Length; j++)
+            {
+                if (i == j) continue;
+                
+                unEqualGroup[i].Should().NotBe(unEqualGroup[j]);
+                unEqualGroup[j].Should().NotBe(unEqualGroup[i]);
+                (unEqualGroup[j] == unEqualGroup[i]).Should().BeFalse();
+                (unEqualGroup[j] != unEqualGroup[i]).Should().BeTrue();
+                (unEqualGroup[i] == unEqualGroup[j]).Should().BeFalse();
+                (unEqualGroup[i] != unEqualGroup[j]).Should().BeTrue();
+            }
         }
     }
 
@@ -49,7 +65,8 @@ public class EqualsShould
                 (ContextName)typeof(StubContextWithAliases2),
                 (ContextName)"alias-2|alias-3",
                 (ContextName)"alias-3|unknown-alias",
-                (ContextName)"alias-3"
+                (ContextName)"alias-3",
+                (ContextName)"ALIAS-3",
             }
         },
         new object[]
@@ -58,6 +75,14 @@ public class EqualsShould
             {
                 (ContextName)"alias-A alias-B",
                 (ContextName)"alias-B|alias-A"
+            }
+        },
+        new object[]
+        {
+            new[]
+            {
+                (ContextName)"alias-a ALIAS-B",
+                (ContextName)"alias-b Alias-a"
             }
         }
     };

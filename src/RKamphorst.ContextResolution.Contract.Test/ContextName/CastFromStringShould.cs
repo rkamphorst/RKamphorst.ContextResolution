@@ -11,18 +11,33 @@ public class CastFromStringShould
     [Theory]
     [InlineData("StubContext", typeof(StubContext))]
     [InlineData("StubContextWithAliases", typeof(StubContextWithAliases))]
+    [InlineData("stubcontextwithaliases", typeof(StubContextWithAliases))]
+    [InlineData("stubContextWithAliases", typeof(StubContextWithAliases))]
     [InlineData("alias-1", typeof(StubContextWithAliases))]
     [InlineData("StubContextWithAliases,alias-2", typeof(StubContextWithAliases))]
     [InlineData("StubContextWithAliases alias-1 alias-2", typeof(StubContextWithAliases))]
     [InlineData("alias-1|alias-2", typeof(StubContextWithAliases))]
     [InlineData("alias-2|alias-3", typeof(StubContextWithAliases2))]
     [InlineData("named-alias-1|named-alias-2", null)]
+    [InlineData("alias-1|ALIAS-2", typeof(StubContextWithAliases))]
     public void MatchCorrectType(string aliasesStr, Type? expectType)
     {
         var result = (ContextName)aliasesStr;
         result.GetContextType().Should().Be(expectType);
     }
     
+    [Theory]
+    [InlineData("StubContextWithAliases", "StubContextWithAliases,alias-2,ALIAS-1")]
+    [InlineData("named-alias-2|NAMED-ALIAS-1", "named-alias-1,named-alias-2")]
+    public void BeEquivalentIfCaseDiffers(string left, string right)
+    {
+        var leftName = (ContextName)left;
+        var rightName = (ContextName)right;
+
+        leftName.Should().Be(rightName);
+        (leftName == rightName).Should().BeTrue();
+        (leftName != rightName).Should().BeFalse();
+    }
     
     [Theory]
     [InlineData("StubContext", "StubContext")]

@@ -12,12 +12,12 @@ public class FromTypedContextShould
     [Fact]
     public void CreateKey()
     {
-        var id = new StubContextWithAliases { Property = "value" };
+        var id = new StubContextWithAliases { AProperty = "value" };
         
         var result = ContextKey.FromTypedContext(id);
 
         result.Id.Should().BeEquivalentTo(id);
         result.Name.Should().Be((ContextName)typeof(StubContextWithAliases));
-        result.Key.Should().Be("{\"StubContextWithAliases|alias-1|alias-2\":{\"property\":\"value\"}}");
+        result.Key.Should().Be("{\"stubContextWithAliases|alias-1|alias-2\":{\"aProperty\":\"value\"}}");
     }
 }

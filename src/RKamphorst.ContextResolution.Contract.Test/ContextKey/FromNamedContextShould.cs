@@ -25,12 +25,12 @@ public class FromNamedContextShould
     public void CreateKeyForAliasReferringToType()
     {
         var name = "alias-1";
-        var id = new { property = "value" };
+        var id = new { aproperty = "value" };
         var result = ContextKey.FromNamedContext(name, id);
 
-        result.Id.Should().BeEquivalentTo(new StubContextWithAliases { Property = "value" });
+        result.Id.Should().BeEquivalentTo(new StubContextWithAliases { AProperty = "value" });
         result.Name.Should().Be((ContextName)name);
-        result.Key.Should().Be("{\"StubContextWithAliases|alias-1|alias-2\":{\"property\":\"value\"}}");
+        result.Key.Should().Be("{\"stubContextWithAliases|alias-1|alias-2\":{\"aProperty\":\"value\"}}");
     }
 
     [Fact]

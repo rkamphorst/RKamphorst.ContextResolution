@@ -1,4 +1,5 @@
-﻿using System.Collections.ObjectModel;
+﻿using System.Collections;
+using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -32,7 +33,10 @@ public readonly struct ContextName
 
         Type[] mappedTypes =
             allAliases
-                .Select(a => typeMap.TryGetValue(a, out IReadOnlySet<Type>? s) ? s : null)
+                .Select(a => 
+                    typeMap
+                        .TryGetValue(a.ToUpperInvariant().Normalize(), out IReadOnlySet<Type>? s) ? s : null
+                )
                 .Aggregate(
                     new HashSet<Type>(),
                     (a, b) =>
@@ -70,6 +74,9 @@ public readonly struct ContextName
 
     public IReadOnlyList<string> Aliases { get; }
 
+    private IEnumerable<string> CaseInsensitiveAliases => 
+        Aliases.Select(a => a.Normalize().ToUpperInvariant());
+
     public string Key => string.Join("|", Aliases);
 
     public object Coerce(object? idOrResult)
@@ -79,7 +86,7 @@ public readonly struct ContextName
         {
             if (!TryConvertToType(result, _type, out var convertedResult))
             {
-                throw new ArgumentException($"Id or result ot convertible to type {_type.Name}", nameof(idOrResult));
+                throw new ArgumentException($"Id not convertable to type {_type.Name}", nameof(idOrResult));
             }
 
             result = convertedResult;
@@ -89,7 +96,7 @@ public readonly struct ContextName
             JToken jId = JToken.FromObject(result);
             if (jId.Type != JTokenType.Object)
             {
-                throw new ArgumentException($"Id or result is a {result.GetType().Name}, not a valid id/result object", nameof(idOrResult));
+                throw new ArgumentException($"Id is a {result.GetType().Name}, not a valid id/result object", nameof(idOrResult));
             }
         }
         return result;
@@ -98,21 +105,26 @@ public readonly struct ContextName
     public override bool Equals(object? obj) 
         => obj is ContextName contextName && Equals(contextName);
 
-    public bool Equals(ContextName other) 
-        => ReferenceEquals(_type, other._type) && Aliases.SequenceEqual(other.Aliases);
+    public bool Equals(ContextName other)
+        => ReferenceEquals(_type, other._type) 
+            && CaseInsensitiveAliases.SequenceEqual(other.CaseInsensitiveAliases);
 
     public override int GetHashCode()
     {
         var h = new HashCode();
         h.Add(_type);
-        foreach (var a in Aliases)
+        foreach (var a in CaseInsensitiveAliases)
         {
             h.Add(a);
         }
         return h.ToHashCode();
     }
     
-    public bool Matches(ContextName other) => other.Aliases.All(Aliases.Contains);
+    public bool Matches(ContextName other)
+    {
+        HashSet<string> myAliases = CaseInsensitiveAliases.ToHashSet();
+        return other.CaseInsensitiveAliases.All(myAliases.Contains);
+    }
 
     public override string ToString() => Key;
 
@@ -196,8 +208,10 @@ public readonly struct ContextName
 
         IEnumerable<IGrouping<string, (string Name, Type Type)>> typeGroups =
             allPossibleContextTypes // keep only types that are valid contexts 
-                .SelectMany(type => EnumerateAliasesForType(type).Select(name => (Name: name, Type: type))
-                ) // make a big list of full names and short names for each type
+                .SelectMany(type => 
+                    EnumerateAliasesForType(type)
+                        .Select(name => (Name: name.ToUpperInvariant().Normalize(), Type: type))
+                ) // make a big list (uppercased) of names for each type
                 .Where(t => !string.IsNullOrWhiteSpace(t.Name)) // discard types that have no suitable name
                 .Distinct() // make sure we have only unique tuples
                 .GroupBy(t => t.Name); // now, some names may have the same name, so we group them

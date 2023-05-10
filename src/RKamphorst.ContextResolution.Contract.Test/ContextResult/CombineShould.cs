@@ -18,13 +18,13 @@ public class CombineShould
             (ContextName)typeof(StubContextWithAliases),
             new[]
             {
-                ContextResult.Success(new StubContextWithAliases { Property = "property" }, CacheInstruction.Transient),
+                ContextResult.Success(new StubContextWithAliases { AProperty = "property" }, CacheInstruction.Transient),
             });
 
         result.GetResult().Should().BeOfType<StubContextWithAliases>();
         result.GetResult().Should().BeEquivalentTo(new StubContextWithAliases
         {
-            Property = "property",
+            AProperty = "property",
         });
     }
     
@@ -35,15 +35,15 @@ public class CombineShould
             (ContextName)typeof(StubContextWithAliases),
             new[]
             {
-                ContextResult.Success(new StubContextWithAliases { Property = "property" }, CacheInstruction.Transient),
-                ContextResult.Success(new StubContextWithAliases { Property2 = "property2" }, CacheInstruction.Transient)
+                ContextResult.Success(new StubContextWithAliases { AProperty = "property" }, CacheInstruction.Transient),
+                ContextResult.Success(new StubContextWithAliases { BProperty = "property2" }, CacheInstruction.Transient)
             });
 
         result.GetResult().Should().BeOfType<StubContextWithAliases>();
         result.GetResult().Should().BeEquivalentTo(new StubContextWithAliases
         {
-            Property = "property",
-            Property2 = "property2"
+            AProperty = "property",
+            BProperty = "property2"
         });
     }
     
@@ -108,15 +108,15 @@ public class CombineShould
             (ContextName)"StubContextWithAliases",
             new[]
             {
-                ContextResult.Success("alias-1|alias-2", new { property = "property" }, CacheInstruction.Transient),
-                ContextResult.Success("alias-1", new { property2 = "property2" }, CacheInstruction.Transient)
+                ContextResult.Success("alias-1|alias-2", new { aproperty = "property" }, CacheInstruction.Transient),
+                ContextResult.Success("alias-1", new { bproperty = "property2" }, CacheInstruction.Transient)
             });
 
         result.GetResult().Should().BeOfType<StubContextWithAliases>();
         result.GetResult().Should().BeEquivalentTo(new StubContextWithAliases
         {
-            Property = "property",
-            Property2 = "property2"
+            AProperty = "property",
+            BProperty = "property2"
         });
     }
     
@@ -127,15 +127,15 @@ public class CombineShould
             (ContextName)"StubContextWithAliases",
             new[]
             {
-                ContextResult.Success("alias-1|alias-2", new { property = "property" }, CacheInstruction.Transient),
-                ContextResult.Success(new StubContextWithAliases { Property2 = "property2" }, CacheInstruction.Transient)
+                ContextResult.Success("alias-1|alias-2", new { aproperty = "property" }, CacheInstruction.Transient),
+                ContextResult.Success(new StubContextWithAliases { BProperty = "property2" }, CacheInstruction.Transient)
             });
 
         result.GetResult().Should().BeOfType<StubContextWithAliases>();
         result.GetResult().Should().BeEquivalentTo(new StubContextWithAliases
         {
-            Property = "property",
-            Property2 = "property2"
+            AProperty = "property",
+            BProperty = "property2"
         });
     }
     
@@ -146,14 +146,14 @@ public class CombineShould
             (ContextName)"named-context",
             new[]
             {
-                ContextResult.Success("named-context", new { property = "property" }, CacheInstruction.Transient),
-                ContextResult.Success( "named-context", new StubContextWithAliases { Property2 = "property2" }, CacheInstruction.Transient)
+                ContextResult.Success("named-context", new { aproperty = "property" }, CacheInstruction.Transient),
+                ContextResult.Success( "named-context", new StubContextWithAliases { BProperty = "property2" }, CacheInstruction.Transient)
             });
 
         result.GetResult().Should().BeEquivalentTo(new JObject()
         {
-            ["Property"] = "property",
-            ["Property2"] = "property2"
+            ["AProperty"] = "property",
+            ["BProperty"] = "property2"
         });
     }
 
@@ -192,7 +192,7 @@ public class CombineShould
             new[]
             {
                 ContextResult.Success("context-name", new { property = "property" }, CacheInstruction.Transient),
-                ContextResult.Success(new StubContextWithAliases { Property2 = "property2" },
+                ContextResult.Success(new StubContextWithAliases { BProperty = "property2" },
                     CacheInstruction.Transient)
             }))).Should().Throw<ArgumentException>();
     }

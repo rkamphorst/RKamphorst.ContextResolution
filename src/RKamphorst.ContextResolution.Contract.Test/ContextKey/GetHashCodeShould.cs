@@ -36,11 +36,11 @@ public class GetHashCodeShould
         {
             new[]
             {
-                ContextKey.FromTypedContext(new StubContextWithAliases { Property = "prop" }),
-                ContextKey.FromNamedContext("alias-1|alias-2", new { property = "prop"}),
-                ContextKey.FromNamedContext("alias-1|unknown-alias",new { property = "prop"}),
-                ContextKey.FromNamedContext("alias-1",new { property = "prop"}),
-                ContextKey.FromTypedContext(new StubContextWithAliases { Property = "prop" })
+                ContextKey.FromTypedContext(new StubContextWithAliases { AProperty = "prop" }),
+                ContextKey.FromNamedContext("alias-1|alias-2", new { aproperty = "prop"}),
+                ContextKey.FromNamedContext("alias-1|unknown-alias",new { aproperty = "prop"}),
+                ContextKey.FromNamedContext("alias-1",new { aproperty = "prop"}),
+                ContextKey.FromTypedContext(new StubContextWithAliases { AProperty = "prop" })
             }
         },
         new object[]

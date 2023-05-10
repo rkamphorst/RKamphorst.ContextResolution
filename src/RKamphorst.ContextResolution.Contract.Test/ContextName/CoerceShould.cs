@@ -12,28 +12,28 @@ public class CoerceShould
     [Fact]
     public void ConvertJObjectToContextNameType()
     {
-        var result = ((ContextName)"alias-1").Coerce(new JObject() { ["property"] = "my value" });
+        var result = ((ContextName)"alias-1").Coerce(new JObject() { ["aproperty"] = "my value" });
 
         result.Should().BeOfType<StubContextWithAliases>();
-        result.Should().BeEquivalentTo(new StubContextWithAliases { Property = "my value" });
+        result.Should().BeEquivalentTo(new StubContextWithAliases { AProperty = "my value" });
     }
     
     [Fact]
     public void ConvertAnonymousTypeToContextNameType()
     {
-        var result = ((ContextName)"alias-1").Coerce(new { property = "my value" });
+        var result = ((ContextName)"alias-1").Coerce(new { aproperty = "my value" });
 
         result.Should().BeOfType<StubContextWithAliases>();
-        result.Should().BeEquivalentTo(new StubContextWithAliases { Property = "my value" });
+        result.Should().BeEquivalentTo(new StubContextWithAliases { AProperty = "my value" });
     }
 
     [Fact]
     public void ConvertOtherTypeToContextNameType()
     {
-        var result = ((ContextName)"alias-1").Coerce(new StubContextWithAliases2 { Property = "my value" });
+        var result = ((ContextName)"alias-1").Coerce(new StubContextWithAliases2 { AProperty = "my value" });
 
         result.Should().BeOfType<StubContextWithAliases>();
-        result.Should().BeEquivalentTo(new StubContextWithAliases { Property = "my value" });
+        result.Should().BeEquivalentTo(new StubContextWithAliases { AProperty = "my value" });
     }
 
     [Fact]
@@ -42,16 +42,16 @@ public class CoerceShould
         var result = ((ContextName)"alias-1").Coerce(null);
 
         result.Should().BeOfType<StubContextWithAliases>();
-        result.Should().BeEquivalentTo(new StubContextWithAliases { Property = null });
+        result.Should().BeEquivalentTo(new StubContextWithAliases { AProperty = null });
     }
     
     [Fact]
     public void NotConvertContextNameType()
     {
-        var result = ((ContextName)"alias-1").Coerce(new StubContextWithAliases { Property = "my value" });
+        var result = ((ContextName)"alias-1").Coerce(new StubContextWithAliases { AProperty = "my value" });
 
         result.Should().BeOfType<StubContextWithAliases>();
-        result.Should().BeEquivalentTo(new StubContextWithAliases { Property = "my value" });
+        result.Should().BeEquivalentTo(new StubContextWithAliases { AProperty = "my value" });
     }
 
     [Fact]
@@ -69,10 +69,10 @@ public class CoerceShould
     [Fact]
     public void NotConvertStrongTypeIfContextNameHasNoType()
     {
-        var result = ((ContextName)"named-context").Coerce(new StubContextWithAliases { Property = "my value" });
+        var result = ((ContextName)"named-context").Coerce(new StubContextWithAliases { AProperty = "my value" });
 
         result.Should().BeOfType<StubContextWithAliases>();
-        result.Should().BeEquivalentTo(new StubContextWithAliases { Property = "my value" });
+        result.Should().BeEquivalentTo(new StubContextWithAliases { AProperty = "my value" });
     }
     
     [Fact]

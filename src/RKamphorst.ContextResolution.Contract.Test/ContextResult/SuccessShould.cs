@@ -13,7 +13,7 @@ public class SuccessShould
     [Fact]
     public void ReturnSuccessResultForTypedResult()
     {
-        var result = ContextResult.Success(new StubContextWithAliases { Property = "y" },
+        var result = ContextResult.Success(new StubContextWithAliases { AProperty = "y" },
             CacheInstruction.Transient);
 
         result.IsContextSourceFound.Should().BeTrue();
@@ -21,13 +21,13 @@ public class SuccessShould
         result.Name.Should().Be((ContextName)typeof(StubContextWithAliases));
         result.GetResult().Should().BeOfType<StubContextWithAliases>();
         result.GetResult().Should()
-            .BeEquivalentTo(new StubContextWithAliases { Property = "y" });
+            .BeEquivalentTo(new StubContextWithAliases { AProperty = "y" });
     }
     
     [Fact]
     public void ReturnSuccessResultForNamedResult()
     {
-        var result = ContextResult.Success("alias-1", new { property = "y" },
+        var result = ContextResult.Success("alias-1", new { aproperty = "y" },
             CacheInstruction.Transient);
 
         result.IsContextSourceFound.Should().BeTrue();
@@ -35,7 +35,7 @@ public class SuccessShould
         result.Name.Should().Be((ContextName)typeof(StubContextWithAliases));
         result.GetResult().Should().BeOfType<StubContextWithAliases>();
         result.GetResult().Should()
-            .BeEquivalentTo(new StubContextWithAliases { Property = "y" });
+            .BeEquivalentTo(new StubContextWithAliases { AProperty = "y" });
     }
     
 }
