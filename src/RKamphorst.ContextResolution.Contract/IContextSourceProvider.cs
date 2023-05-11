@@ -10,7 +10,10 @@ public interface IContextSourceProvider
     /// </summary>
     /// <typeparam name="TContext">The type of context the context sources provide</typeparam>
     /// <seealso cref="ITypedContextSource{TContext}"/>
-    /// <returns>All typed context sources for <typeparamref name="TContext"/></returns>
+    /// <returns>
+    ///   All typed context sources for <typeparamref name="TContext"/>,
+    ///   empty enumerable if none were found
+    /// </returns>
     public IEnumerable<ITypedContextSource<TContext>> GetTypedContextSources<TContext>()
         where TContext : class;
 

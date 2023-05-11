@@ -18,7 +18,7 @@ operation, each having similar but slightly different context needs?
 We want to *decouple* the operation(s) from the other domains. This will make it
 easier to add or update sources and operations indepentently.
 
-This library project, *Context Resolution*, provides a way in which:
+This repository provides a way in which:
 
 * an operation can request context without knowing where the context comes from;
 * context sources don't have to be aware of which operation(s) consume them;

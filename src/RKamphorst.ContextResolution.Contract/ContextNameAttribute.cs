@@ -7,7 +7,7 @@ namespace RKamphorst.ContextResolution.Contract;
 /// Any class with an empty constructor can be used as a context.
 ///
 /// By default a context's name is the same as its class name, either the simple class name or the fully classified one.
-/// With this attribute, you can define additional names under which a class can be found as a context.
+/// With this attribute, you can define additional names ("aliases") under which a class can be found as a context.
 /// </remarks>
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
 public class ContextNameAttribute : Attribute

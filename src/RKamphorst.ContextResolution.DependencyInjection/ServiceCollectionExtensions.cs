@@ -10,6 +10,11 @@ namespace RKamphorst.ContextResolution.DependencyInjection;
 
 public static class ServiceCollectionExtensions
 {
+    /// <summary>
+    /// Add context provider service
+    /// </summary>
+    /// <param name="services">Service collection to add services to</param>
+    /// <returns>The same services collection, to support chaining</returns>
     public static IServiceCollection AddContextProvider(this IServiceCollection services)
     {
         services
@@ -19,6 +24,12 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
+    /// <summary>
+    /// Add caching capability for the context provider
+    /// </summary>
+    /// <param name="services">Service collection to add services to</param>
+    /// <param name="configure">Configuration callback for the cache.</param>
+    /// <returns>The same services collection for chainability</returns>
     public static IServiceCollection AddContextProviderCache(
         this IServiceCollection services, Action<ContextProviderCacheOptions> configure
         )

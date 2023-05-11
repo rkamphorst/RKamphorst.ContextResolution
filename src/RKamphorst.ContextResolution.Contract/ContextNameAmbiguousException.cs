@@ -5,7 +5,7 @@ public class ContextNameAmbiguousException : ContextResolutionException
     /// <summary>
     /// Constructor
     /// </summary>
-    /// <param name="aliases">No type was found for given context name aliases</param>
+    /// <param name="aliases">No type was found for the combination of given context name aliases</param>
     public ContextNameAmbiguousException(string[] aliases, IEnumerable<Type> types) : base(
         $"There are multiple context types that are available under '{string.Join(",", aliases)}'")
     {

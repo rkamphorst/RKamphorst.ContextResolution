@@ -78,7 +78,7 @@ public class ContextProvider : IContextProvider
             requireAtLeastOneSource,
             cancellationToken)).GetResult();
     
-    public async Task<ContextResult> GetContextAsync(ContextKey key,
+    private async Task<ContextResult> GetContextAsync(ContextKey key,
         bool requireAtLeastOneSource = false,
         CancellationToken cancellationToken = default)
     {

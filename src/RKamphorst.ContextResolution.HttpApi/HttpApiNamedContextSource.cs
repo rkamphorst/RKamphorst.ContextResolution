@@ -4,6 +4,9 @@ using RKamphorst.ContextResolution.HttpApi.Dto;
 
 namespace RKamphorst.ContextResolution.HttpApi;
 
+/// <summary>
+/// Named context source that gets context from an HTTP api
+/// </summary>
 public class HttpApiNamedContextSource : INamedContextSource
 {
     public const string HttpClientName = nameof(HttpApiNamedContextSource);

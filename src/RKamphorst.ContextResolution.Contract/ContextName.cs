@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -7,6 +6,19 @@ using Newtonsoft.Json.Linq;
 
 namespace RKamphorst.ContextResolution.Contract;
 
+/// <summary>
+/// Represents the name of a context
+/// </summary>
+/// <remarks>
+/// A context name can be any string. If it matches (case insensitive) the name of a type, or a
+/// <see cref="ContextNameAttribute"/> on a type, it is automatically bound to that type.
+///
+/// One type can have multiple names: the name of the type itself, plus any number of
+/// <see cref="ContextNameAttribute"/>s on that type. These are the context name *aliases*.
+/// It is possible to refer to one context name by multiple aliases at the same time (to avoid ambiguity);
+/// you can do this by specifying the aliases, separated by '|', ',' or ' ', in one string.
+/// 
+/// </remarks>
 public readonly struct ContextName
 {
     private static readonly Regex AliasSeparatorRegex = new(@"[\s,/|]+", RegexOptions.Compiled);
@@ -35,7 +47,7 @@ public readonly struct ContextName
             allAliases
                 .Select(a => 
                     typeMap
-                        .TryGetValue(a.ToUpperInvariant().Normalize(), out IReadOnlySet<Type>? s) ? s : null
+                        .TryGetValue(a.Normalize().ToLowerInvariant(), out IReadOnlySet<Type>? s) ? s : null
                 )
                 .Aggregate(
                     new HashSet<Type>(),
@@ -70,15 +82,39 @@ public readonly struct ContextName
 
     private readonly Type? _type;
 
+    /// <summary>
+    /// Get the type that this context name is bound to
+    /// </summary>
+    /// <returns>The context type of this context name is bound to a type. If not, <c>null</c></returns>
     public Type? GetContextType() => _type;
 
+    /// <summary>
+    /// The aliases for this context name. 
+    /// </summary>
     public IReadOnlyList<string> Aliases { get; }
 
     private IEnumerable<string> CaseInsensitiveAliases => 
-        Aliases.Select(a => a.Normalize().ToUpperInvariant());
+        Aliases.Select(a => a.Normalize().ToLowerInvariant());
 
-    public string Key => string.Join("|", Aliases);
+    /// <summary>
+    /// The string representation for this context name
+    /// </summary>
+    /// <see cref=""/>
+    public string Key => string.Join("|", CaseInsensitiveAliases);
 
+    /// <summary>
+    /// Given ID (see <see cref="ContextKey.Id"/>) or result (<see cref="ContextResult.Result"/>,
+    /// coerce into the expected type for this context name.
+    /// </summary>
+    /// <remarks>
+    /// If this context name is bound to a type, tries to convert to that type.
+    /// Otherwise, creates a (dynamic) object that reflects the id or result.
+    /// </remarks>
+    /// <param name="idOrResult">The object to coerce</param>
+    /// <returns>The coerced object</returns>
+    /// <exception cref="ArgumentException">
+    ///     Thrown if <paramref name="idOrResult"/> cannot be converted into the type bound to this context name.
+    /// </exception>
     public object Coerce(object? idOrResult)
     {
         var result = idOrResult ?? new { };
@@ -102,13 +138,33 @@ public readonly struct ContextName
         return result;
     }
     
+    /// <summary>
+    /// Determine whether an object equals this context name. 
+    /// </summary>
+    /// <see cref="Equals(ContextName)"/>
     public override bool Equals(object? obj) 
         => obj is ContextName contextName && Equals(contextName);
 
+    /// <summary>
+    /// Determine whether context name equals this one
+    /// </summary>
+    /// <remarks>
+    /// Two context names are equal if:
+    /// - The type they are bound to is the same, and
+    /// - Their aliases are the same, ordering matters!
+    /// </remarks>
     public bool Equals(ContextName other)
         => ReferenceEquals(_type, other._type) 
             && CaseInsensitiveAliases.SequenceEqual(other.CaseInsensitiveAliases);
 
+    /// <summary>
+    /// Calculate hash code for this context name
+    /// </summary>
+    /// <remarks>
+    /// The hash code is based on:
+    /// - the type bound to this context name, if any
+    /// - the aliases for this context name, in order
+    /// </remarks>
     public override int GetHashCode()
     {
         var h = new HashCode();
@@ -120,25 +176,61 @@ public readonly struct ContextName
         return h.ToHashCode();
     }
     
+    /// <summary>
+    /// Determine whether this context name *matches* another one
+    /// </summary>
+    /// <remarks>
+    /// This context name matches the other if all the aliases that the other context name has, are also in this context
+    /// name's aliases list (order does NOT matter here)
+    /// </remarks>
     public bool Matches(ContextName other)
     {
         HashSet<string> myAliases = CaseInsensitiveAliases.ToHashSet();
         return other.CaseInsensitiveAliases.All(myAliases.Contains);
     }
 
+    /// <summary>
+    /// Create a string representation for this context name. Returns what is in <see cref="Key"/>
+    /// </summary>
     public override string ToString() => Key;
 
+    /// <summary>
+    /// Create from string by casting
+    /// </summary>
+    /// <param name="aliases">
+    ///     A string with one or more aliases.
+    ///     If more than one, they need to be separated by '|', ',' or ' '
+    /// </param>
     public static explicit operator ContextName(string aliases) => new(aliases);
-    
+
+    /// <summary>
+    /// Create from type by casting
+    /// </summary>
+    /// <remarks>
+    /// A context name bound to given type is created; its aliases are the type's name and all the
+    /// <see cref="ContextNameAttribute"/>s on that type.
+    /// </remarks>
     public static explicit operator ContextName(Type type) => new(type);
 
+    /// <summary>
+    /// Cast to string
+    /// </summary>
+    /// <see cref="ToString"/>
     public static explicit operator string(ContextName contextName) => contextName.ToString();
 
+    /// <summary>
+    /// Operator overload: ==
+    /// </summary>
+    /// <see cref="Equals(ContextName)"/>
     public static bool operator ==(ContextName left, ContextName right)
     {
         return left.Equals(right);
     }
 
+    /// <summary>
+    /// Operator overload: !=
+    /// </summary>
+    /// <see cref="Equals(ContextName)"/>
     public static bool operator !=(ContextName left, ContextName right)
     {
         return !(left == right);
@@ -210,7 +302,7 @@ public readonly struct ContextName
             allPossibleContextTypes // keep only types that are valid contexts 
                 .SelectMany(type => 
                     EnumerateAliasesForType(type)
-                        .Select(name => (Name: name.ToUpperInvariant().Normalize(), Type: type))
+                        .Select(name => (Name: name.Normalize().ToLowerInvariant(), Type: type))
                 ) // make a big list (uppercased) of names for each type
                 .Where(t => !string.IsNullOrWhiteSpace(t.Name)) // discard types that have no suitable name
                 .Distinct() // make sure we have only unique tuples

@@ -1,6 +1,5 @@
 ﻿using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
-using Moq;
 using RKamphorst.ContextResolution.Contract;
 using RKamphorst.ContextResolution.DependencyInjection.Test.Stubs;
 using Xunit;

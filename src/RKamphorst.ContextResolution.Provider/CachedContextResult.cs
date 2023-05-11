@@ -3,6 +3,9 @@ using RKamphorst.ContextResolution.Contract;
 
 namespace RKamphorst.ContextResolution.Provider;
 
+/// <summary>
+/// Represents a cached context result. Used by <see cref="ContextProviderCache"/>.
+/// </summary>
 public class CachedContextResult 
 {
     private readonly ContextResult _contextResult;
