@@ -18,6 +18,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddContextProvider(this IServiceCollection services)
     {
         services
+            .AddLogging()
             .AddScoped<IContextProvider, ContextProvider>()
             .AddScoped<IContextSourceProvider, ContextSourceProvider>();
         

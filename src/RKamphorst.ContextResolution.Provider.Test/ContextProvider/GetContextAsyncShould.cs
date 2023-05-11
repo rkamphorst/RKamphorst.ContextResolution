@@ -3,6 +3,7 @@ using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using Moq;
 using RKamphorst.ContextResolution.Contract;
 using RKamphorst.ContextResolution.Provider.Test.Stubs;
@@ -60,7 +61,7 @@ public class GetContextAsyncShould
                     It.IsAny<CancellationToken>()
                 )
             )
-            .Returns((ContextKey key, IContextProvider provider, CancellationToken _) =>
+            .Returns((ContextKey key, IContextProvider _, CancellationToken _) =>
             {
                 if (key.Name.GetContextType() != null)
                 {
@@ -94,9 +95,10 @@ public class GetContextAsyncShould
 
         _mockContextSourceProvider.Setup(
             m => m.GetNamedContextSources()
-        ).Returns(new INamedContextSource[] { _mockNamedContextSource.Object });
+        ).Returns(new[] { _mockNamedContextSource.Object });
 
-        _sut = new Provider.ContextProvider(_mockContextSourceProvider.Object);
+        _sut = new Provider.ContextProvider(_mockContextSourceProvider.Object,
+            Mock.Of<ILogger<Provider.ContextProvider>>());
     }
 
     [Fact]
@@ -338,7 +340,7 @@ public class GetContextAsyncShould
                     It.IsAny<CancellationToken>()
                 )
             )
-            .Returns(async (ContextKey key, IContextProvider provider, CancellationToken c) =>
+            .Returns(async (ContextKey _, IContextProvider provider, CancellationToken c) =>
             {
                 await provider.GetContextAsync("named-context", null, false, c);
                 return Array.Empty<ContextResult>();

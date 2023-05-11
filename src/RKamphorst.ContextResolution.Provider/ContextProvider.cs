@@ -1,4 +1,5 @@
-﻿using RKamphorst.ContextResolution.Contract;
+﻿using Microsoft.Extensions.Logging;
+using RKamphorst.ContextResolution.Contract;
 
 namespace RKamphorst.ContextResolution.Provider;
 
@@ -22,6 +23,8 @@ public class ContextProvider : IContextProvider
      *     NOTE: It is not cleared between GetContextAsync invocations!
      */
     private readonly IContextProviderCache? _cache;
+
+    private readonly ILogger<ContextProvider> _logger;
     private readonly IDictionary<ContextKey, Task<ContextResult>> _invokeTasks;
 
     /**
@@ -35,21 +38,22 @@ public class ContextProvider : IContextProvider
     private readonly ContextProvider? _parent;
     private readonly ContextKey? _forContext;
 
-    public ContextProvider(IContextSourceProvider contextSourceProvider) 
-        : this(contextSourceProvider, null) {}
+    public ContextProvider(IContextSourceProvider contextSourceProvider, ILogger<ContextProvider> logger) 
+        : this(contextSourceProvider, null, logger) {}
 
-    public ContextProvider(IContextSourceProvider contextSourceProvider, IContextProviderCache? cache)
+    public ContextProvider(IContextSourceProvider contextSourceProvider, IContextProviderCache? cache, ILogger<ContextProvider> logger)
         : this(new AggregateContextSourceInvoker(new IContextSourceInvoker[]
         {
             new NamedContextSourceInvoker(contextSourceProvider),
             new TypedContextSourceInvoker(contextSourceProvider)
-        }), cache) { }
+        }), cache, logger) { }
 
-    internal ContextProvider(IContextSourceInvoker contextSourceInvoker, IContextProviderCache? cache)
+    internal ContextProvider(IContextSourceInvoker contextSourceInvoker, IContextProviderCache? cache, ILogger<ContextProvider> logger)
     {
         _contextSourceInvoker = contextSourceInvoker;
         
         _cache = cache;
+        _logger = logger;
         _invokeTasks = new Dictionary<ContextKey, Task<ContextResult>>();
         
         _parent = null;
@@ -61,8 +65,10 @@ public class ContextProvider : IContextProvider
         _contextSourceInvoker = parent._contextSourceInvoker;
         _cache = parent._cache;
         _invokeTasks = parent._invokeTasks;
+        _logger = parent._logger;
         _parent = parent;
         _forContext = forContext;
+        
     }
 
     public async Task<TContext> GetContextAsync<TContext>(TContext? requestedContext,
@@ -82,12 +88,21 @@ public class ContextProvider : IContextProvider
         bool requireAtLeastOneSource = false,
         CancellationToken cancellationToken = default)
     {
+        using IDisposable? _ = _logger.BeginScope(new Dictionary<string, object>()
+        {
+            ["ContextKey"] = key,
+            ["RequireAtLeastOneSource"] = requireAtLeastOneSource
+        });
+        
+        _logger.LogDebug("Getting or creating context {ContextKey}", key);
         AssertNoCircularDependency(key);
         
         ContextResult contextResult = _cache != null
             ? await _cache.GetOrCreateAsync(key, InvokeSourcesAsync, cancellationToken)
             : await InvokeSourcesAsync();
 
+        _logger.LogInformation("Getting or creating context result {@ContextResult}", contextResult);
+        
         if (requireAtLeastOneSource && !contextResult.IsContextSourceFound)
         {
             throw new ContextSourceNotFoundException(contextResult.Name);
@@ -97,10 +112,12 @@ public class ContextProvider : IContextProvider
 
         Task<ContextResult> InvokeSourcesAsync() => GetOrCreateInvokeTask(key, async () =>
         {
+            _logger.LogInformation("Invoking context sources");
             ContextResult[] contextResults =
                 await _contextSourceInvoker.GetContextResultsAsync(
                     key, new ContextProvider(this, key), cancellationToken
                 );
+            _logger.LogInformation("Invocation resulted in {ContextResultCount} context results to combine", key);
             return ContextResult.Combine(key.Name, contextResults);
         });
     }
@@ -109,6 +126,7 @@ public class ContextProvider : IContextProvider
     {
         if (!_invokeTasks.TryGetValue(key, out Task<ContextResult>? result))
         {
+            _logger.LogDebug("Reusing result from prior invocation");
             result = _invokeTasks[key] = createAsync();
         }
 
