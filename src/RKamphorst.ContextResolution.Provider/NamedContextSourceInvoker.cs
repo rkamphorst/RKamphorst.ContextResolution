@@ -1,14 +1,17 @@
-﻿using RKamphorst.ContextResolution.Contract;
+﻿using Microsoft.Extensions.Logging;
+using RKamphorst.ContextResolution.Contract;
 
 namespace RKamphorst.ContextResolution.Provider;
 
 internal class NamedContextSourceInvoker : IContextSourceInvoker
 {
     private readonly IContextSourceProvider _contextSourceProvider;
+    private readonly ILogger _logger;
 
-    public NamedContextSourceInvoker(IContextSourceProvider contextSourceProvider)
+    public NamedContextSourceInvoker(IContextSourceProvider contextSourceProvider, ILogger logger)
     {
         _contextSourceProvider = contextSourceProvider;
+        _logger = logger;
     }
 
     public async Task<ContextResult[]> GetContextResultsAsync(ContextKey key, IContextProvider contextProvider,
@@ -16,9 +19,17 @@ internal class NamedContextSourceInvoker : IContextSourceInvoker
     {
         INamedContextSource[] contextSources = _contextSourceProvider.GetNamedContextSources().ToArray();
 
-        return (await Task.WhenAll(contextSources.Select(GetFromSourceAsync)))
+        _logger.LogDebug("Invoking {NamedContextSourceCount} named context sources", contextSources.Length);
+        var result = (await Task.WhenAll(contextSources.Select(GetFromSourceAsync)))
             .SelectMany(s => s).ToArray();
         
+        _logger.LogInformation(
+            "Got {NamedContextResultCount} results from {NamedContextSourceCount} named context sources",
+            result.Count(r => r.IsContextSourceFound),
+            contextSources.Length
+            );
+
+        return result;
             
         async Task<ContextResult[]> GetFromSourceAsync(INamedContextSource namedContextSource)
         {

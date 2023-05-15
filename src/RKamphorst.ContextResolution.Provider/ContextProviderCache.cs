@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using RKamphorst.ContextResolution.Contract;
 
@@ -8,15 +9,18 @@ namespace RKamphorst.ContextResolution.Provider;
 public class ContextProviderCache : IContextProviderCache
 {
     private readonly ContextProviderCacheOptions _options;
+    private readonly ILogger<ContextProviderCache> _logger;
     private readonly IMemoryCache? _localCache;
     private readonly IDistributedCache? _distributedCache;
 
     public ContextProviderCache(
         ContextProviderCacheOptions options, 
         Func<ContextProviderCacheOptions, IMemoryCache?> memoryCache, 
-        Func<ContextProviderCacheOptions, IDistributedCache?> distributedCache)
+        Func<ContextProviderCacheOptions, IDistributedCache?> distributedCache,
+        ILogger<ContextProviderCache> logger)
     {
         _options = options;
+        _logger = logger;
         _localCache = options.UseLocalCache ?  memoryCache(options) : null;
         _distributedCache = options.UseDistributedCache ? distributedCache(options) : null;
     }
@@ -62,6 +66,7 @@ public class ContextProviderCache : IContextProviderCache
         )
         {
             // short circuit: the cache item was found
+            _logger.LogInformation("Found {@DistributedCachedItem} in distributed cache", cached);
             return cached;
         }
 
@@ -72,6 +77,7 @@ public class ContextProviderCache : IContextProviderCache
         TimeSpan expiration = instruction.GetDistributedExpirationAtAge(GetCurrentTime() - newCached.CreationTime);
         if (expiration > TimeSpan.Zero)
         {
+            _logger.LogDebug("Adding result for {ContextKey} to local cache", contextKey);
             await _distributedCache.SetStringAsync(contextKey.Key, newCachedStr, new DistributedCacheEntryOptions
             {
                 AbsoluteExpirationRelativeToNow = expiration,
@@ -79,6 +85,7 @@ public class ContextProviderCache : IContextProviderCache
                     ? TimeSpan.FromSeconds(_options.DistributedSlidingExpirationSeconds.Value)
                     : null
             }, cancellationToken);
+            _logger.LogInformation("Added result for {ContextKey} to distributed cache", contextKey);
         }
 
         return newCached;
@@ -94,6 +101,7 @@ public class ContextProviderCache : IContextProviderCache
         
         if (_localCache.TryGetValue(contextKey, out CachedContextResult? cacheItem) && cacheItem != null)
         {
+            _logger.LogInformation("Found {@LocalCachedItem} in local cache", cacheItem);
             // short circuit: the cache item was found
             return cacheItem;
         }
@@ -103,6 +111,7 @@ public class ContextProviderCache : IContextProviderCache
         var expiration = instruction.GetLocalExpirationAtAge(GetCurrentTime() - newCachedContextResult.CreationTime);
         if (expiration > TimeSpan.Zero)
         {
+            _logger.LogDebug("Adding result for {ContextKey} to local cache", contextKey);
             _localCache.Set(contextKey, newCachedContextResult, new MemoryCacheEntryOptions
             {
                 AbsoluteExpirationRelativeToNow = expiration == TimeSpan.MaxValue ? null : expiration,
@@ -116,6 +125,7 @@ public class ContextProviderCache : IContextProviderCache
                     ? JsonConvert.SerializeObject(newCachedContextResult).Length
                     : null
             });
+            _logger.LogInformation("Added result for {ContextKey} to local cache", contextKey);
         }
 
         return newCachedContextResult;

@@ -1,14 +1,17 @@
-﻿using RKamphorst.ContextResolution.Contract;
+﻿using Microsoft.Extensions.Logging;
+using RKamphorst.ContextResolution.Contract;
 
 namespace RKamphorst.ContextResolution.Provider;
 
 internal class TypedContextSourceInvoker : IContextSourceInvoker
 {
     private readonly IContextSourceProvider _contextSourceProvider;
+    private readonly ILogger _logger;
 
-    public TypedContextSourceInvoker(IContextSourceProvider contextSourceProvider)
+    public TypedContextSourceInvoker(IContextSourceProvider contextSourceProvider, ILogger logger)
     {
         _contextSourceProvider = contextSourceProvider;
+        _logger = logger;
     }
 
     public Task<ContextResult[]> GetContextResultsAsync(
@@ -25,6 +28,8 @@ internal class TypedContextSourceInvoker : IContextSourceInvoker
         ITypedContextSource<TContext>[] contextSources =
             _contextSourceProvider.GetTypedContextSources<TContext>().ToArray();
 
+        _logger.LogDebug("Invoking {TypedContextSourceCount} typed context sources", contextSources.Length);
+        
         if (contextSources.Length == 0)
         {
             return Array.Empty<ContextResult>();
@@ -33,6 +38,11 @@ internal class TypedContextSourceInvoker : IContextSourceInvoker
         CacheInstruction cacheInstruction =
             CacheInstruction.Combine(await Task.WhenAll(contextSources.Select(FillFromSourceAsync)));
 
+        _logger.LogInformation(
+            "Got result from {TypedContextSourceCount} named context sources",
+            contextSources.Length
+        );
+        
         return new[] { ContextResult.Success(id, cacheInstruction) };
 
         async Task<CacheInstruction> FillFromSourceAsync(ITypedContextSource<TContext> typedContextSource)

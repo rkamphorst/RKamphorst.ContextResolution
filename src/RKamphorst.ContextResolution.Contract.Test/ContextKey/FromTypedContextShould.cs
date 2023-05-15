@@ -18,6 +18,6 @@ public class FromTypedContextShould
 
         result.Id.Should().BeEquivalentTo(id);
         result.Name.Should().Be((ContextName)typeof(StubContextWithAliases));
-        result.Key.Should().Be("{\"stubContextWithAliases|alias-1|alias-2\":{\"aProperty\":\"value\"}}");
+        result.Key.Should().Be("{\"stubcontextwithaliases|alias-1|alias-2\":{\"aProperty\":\"value\"}}");
     }
 }

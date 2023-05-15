@@ -18,13 +18,13 @@ public class CastToStringShould
 
     public static IEnumerable<object[]> TestNamesAndStrings => new[]
     {
-        new object[] { (ContextName)typeof(StubContext), "StubContext" },
-        new object[] { (ContextName)typeof(StubContextWithAliases), "StubContextWithAliases|alias-1|alias-2" },
+        new object[] { (ContextName)typeof(StubContext), "stubcontext" },
+        new object[] { (ContextName)typeof(StubContextWithAliases), "stubcontextwithaliases|alias-1|alias-2" },
         new object[] { (ContextName)"some-weird-name-nobody-knows", "some-weird-name-nobody-knows" },
         new object[] { (ContextName)"z-context,x-context,a-context", "a-context|x-context|z-context" },
-        new object[] { (ContextName)"alias-1|alias-2", "StubContextWithAliases|alias-1|alias-2" },
-        new object[] { (ContextName)"alias-2|alias-3", "StubContextWithAliases2|alias-2|alias-3" },
-        new object[] { (ContextName)"alias-1|unknown-alias", "StubContextWithAliases|alias-1|alias-2" }
+        new object[] { (ContextName)"alias-1|alias-2", "stubcontextwithaliases|alias-1|alias-2" },
+        new object[] { (ContextName)"alias-2|alias-3", "stubcontextwithaliases2|alias-2|alias-3" },
+        new object[] { (ContextName)"alias-1|unknown-alias", "stubcontextwithaliases|alias-1|alias-2" }
     };
     
     [Theory]

@@ -44,8 +44,8 @@ public class ContextProvider : IContextProvider
     public ContextProvider(IContextSourceProvider contextSourceProvider, IContextProviderCache? cache, ILogger<ContextProvider> logger)
         : this(new AggregateContextSourceInvoker(new IContextSourceInvoker[]
         {
-            new NamedContextSourceInvoker(contextSourceProvider),
-            new TypedContextSourceInvoker(contextSourceProvider)
+            new NamedContextSourceInvoker(contextSourceProvider, logger),
+            new TypedContextSourceInvoker(contextSourceProvider, logger)
         }), cache, logger) { }
 
     internal ContextProvider(IContextSourceInvoker contextSourceInvoker, IContextProviderCache? cache, ILogger<ContextProvider> logger)
@@ -101,7 +101,7 @@ public class ContextProvider : IContextProvider
             ? await _cache.GetOrCreateAsync(key, InvokeSourcesAsync, cancellationToken)
             : await InvokeSourcesAsync();
 
-        _logger.LogInformation("Getting or creating context result {@ContextResult}", contextResult);
+        _logger.LogInformation("Got context result {@ContextResult}", contextResult);
         
         if (requireAtLeastOneSource && !contextResult.IsContextSourceFound)
         {

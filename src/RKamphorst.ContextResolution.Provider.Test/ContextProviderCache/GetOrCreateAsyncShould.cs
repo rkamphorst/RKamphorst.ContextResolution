@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using Moq;
 using RKamphorst.ContextResolution.Contract;
 using RKamphorst.ContextResolution.Provider.Test.Stubs;
@@ -72,7 +73,8 @@ public class GetOrCreateAsyncShould
                 UseDistributedCache = useDistributedCache
             },
             _ => createLocalCache ? mockLocalCache.Object : null,
-            _ => createDistributedCache ? mockDistributedCache.Object : null
+            _ => createDistributedCache ? mockDistributedCache.Object : null,
+            Mock.Of<ILogger<ContextProviderCache>>()
         );
 
         var id = new ContextA { Id = "id1" };
@@ -103,7 +105,7 @@ public class GetOrCreateAsyncShould
     [InlineData(null, 54321)]
     public async Task UseLocalCacheOptions(long? localSizeLimit, int? localSlidingExpirationSeconds)
     {
-        ContextProviderCacheOptions cacheCreationOptions = null;
+        ContextProviderCacheOptions? cacheCreationOptions = null;
         var mockLocalCache = new Mock<IMemoryCache>();
         var stubCacheEntry = new StubCacheEntry("key");
         
@@ -127,7 +129,8 @@ public class GetOrCreateAsyncShould
                 cacheCreationOptions = options;
                 return mockLocalCache.Object;
             },
-            _ => null
+            _ => null,
+            Mock.Of<ILogger<ContextProviderCache>>()
         );
 
         var id = new ContextA { Id = "id1" };
@@ -168,7 +171,6 @@ public class GetOrCreateAsyncShould
     [InlineData(12345)]
     public async Task UseDistributedCacheOptions(int? distributedSlidingExpirationSeconds)
     {
-        ContextProviderCacheOptions cacheCreationOptions = null;
         var mockDistributedCache = new Mock<IDistributedCache>();
 
         var sut = new ContextProviderCache(
@@ -179,7 +181,8 @@ public class GetOrCreateAsyncShould
                 DistributedSlidingExpirationSeconds = distributedSlidingExpirationSeconds
             },
             _ => null,
-            _ => mockDistributedCache.Object
+            _ => mockDistributedCache.Object,
+            Mock.Of<ILogger<ContextProviderCache>>()
         );
 
         var id = new ContextA { Id = "id1" };
@@ -228,7 +231,8 @@ public class GetOrCreateAsyncShould
                 UseDistributedCache = true
             },
             _ => null,
-            _ => mockCache.Object
+            _ => mockCache.Object,
+            Mock.Of<ILogger<ContextProviderCache>>()
         );
 
         var id = new ContextA { Id = "id1" };
@@ -275,7 +279,8 @@ public class GetOrCreateAsyncShould
                 UseDistributedCache = true
             },
             _ => null,
-            _ => mockDistributedCache.Object
+            _ => mockDistributedCache.Object,
+            Mock.Of<ILogger<ContextProviderCache>>()
         );
 
         var id = new ContextA { Id = "id1" };
@@ -334,7 +339,8 @@ public class GetOrCreateAsyncShould
                 UseLocalCache = true
             },
             _ => mockLocalCache.Object,
-            _ => null
+            _ => null,
+            Mock.Of<ILogger<ContextProviderCache>>()
         )
         {
             GetCurrentTime = () => now

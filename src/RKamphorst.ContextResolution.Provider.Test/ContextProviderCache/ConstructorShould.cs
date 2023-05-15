@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using Moq;
 using RKamphorst.ContextResolution.Contract;
 using Xunit;
@@ -21,7 +22,8 @@ public class ConstructorShould
                 UseLocalCache = true
             }, 
             _ => null,
-            _ => Mock.Of<IDistributedCache>()
+            _ => Mock.Of<IDistributedCache>(),
+            Mock.Of<ILogger<ContextProviderCache>>()
         );
 
         ContextResult result =
@@ -41,7 +43,8 @@ public class ConstructorShould
                 UseDistributedCache = true
             },
             _ => Mock.Of<IMemoryCache>(),
-            _ => null
+            _ => null,
+            Mock.Of<ILogger<ContextProviderCache>>()
         );
 
         ContextResult result =

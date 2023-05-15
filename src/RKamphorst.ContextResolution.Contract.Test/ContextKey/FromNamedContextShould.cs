@@ -30,7 +30,7 @@ public class FromNamedContextShould
 
         result.Id.Should().BeEquivalentTo(new StubContextWithAliases { AProperty = "value" });
         result.Name.Should().Be((ContextName)name);
-        result.Key.Should().Be("{\"stubContextWithAliases|alias-1|alias-2\":{\"aProperty\":\"value\"}}");
+        result.Key.Should().Be("{\"stubcontextwithaliases|alias-1|alias-2\":{\"aProperty\":\"value\"}}");
     }
 
     [Fact]

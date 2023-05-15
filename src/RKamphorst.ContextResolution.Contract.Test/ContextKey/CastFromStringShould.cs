@@ -27,7 +27,7 @@ public class CastFromStringShould
         
         result.Id.Should().BeEquivalentTo(new StubContextWithAliases { AProperty = "value" });
         result.Name.Aliases.Should().BeEquivalentTo(new[] { "StubContextWithAliases", "alias-1", "alias-2" });
-        result.Key.Should().Be("{\"stubContextWithAliases|alias-1|alias-2\":{\"aProperty\":\"value\"}}");
+        result.Key.Should().Be("{\"stubcontextwithaliases|alias-1|alias-2\":{\"aProperty\":\"value\"}}");
     }
     
     [Theory]

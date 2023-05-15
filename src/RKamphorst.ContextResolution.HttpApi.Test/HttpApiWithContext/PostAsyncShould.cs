@@ -87,13 +87,13 @@ public class PostAsyncShould
         var expectResult = new Result
             { IntResult = 66, Contexts = new[] { "A", "B", "C" } };
         _contextProviderMock
-            .Setup(p => p.GetContextAsync("contextA", It.IsAny<object>(), false,It.IsAny<CancellationToken>()))
+            .Setup(p => p.GetContextAsync("contexta", It.IsAny<object>(), false,It.IsAny<CancellationToken>()))
             .ReturnsAsync("A");
         _contextProviderMock
-            .Setup(p => p.GetContextAsync("contextB", It.IsAny<object>(), false, It.IsAny<CancellationToken>()))
+            .Setup(p => p.GetContextAsync("contextb", It.IsAny<object>(), false, It.IsAny<CancellationToken>()))
             .ReturnsAsync("B");
         _contextProviderMock
-            .Setup(p => p.GetContextAsync("contextC", It.IsAny<object>(), false, It.IsAny<CancellationToken>()))
+            .Setup(p => p.GetContextAsync("contextc", It.IsAny<object>(), false, It.IsAny<CancellationToken>()))
             .ReturnsAsync("C");
 
         _httpMessageHandlerMock
@@ -155,11 +155,11 @@ public class PostAsyncShould
 
         result.Should().BeEquivalentTo(expectResult);
         _contextProviderMock
-            .Verify(p => p.GetContextAsync("contextA", It.IsAny<object>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
+            .Verify(p => p.GetContextAsync("contexta", It.IsAny<object>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
         _contextProviderMock
-            .Verify(p => p.GetContextAsync("contextB", It.IsAny<object>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
+            .Verify(p => p.GetContextAsync("contextb", It.IsAny<object>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
         _contextProviderMock
-            .Verify(p => p.GetContextAsync("contextC", It.IsAny<object>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
+            .Verify(p => p.GetContextAsync("contextc", It.IsAny<object>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
         _httpMessageHandlerMock.Verify(HttpMessageHandlerSendAsync, Times.Exactly(3));
     }
 
@@ -170,13 +170,13 @@ public class PostAsyncShould
         var expectResult = new Result
             { IntResult = 66, Contexts = new[] { "A", "B", "C" } };
         _contextProviderMock
-            .Setup(p => p.GetContextAsync("contextA", It.IsAny<object>(), true,It.IsAny<CancellationToken>()))
+            .Setup(p => p.GetContextAsync("contexta", It.IsAny<object>(), true,It.IsAny<CancellationToken>()))
             .ReturnsAsync("A");
         _contextProviderMock
-            .Setup(p => p.GetContextAsync("contextB", It.IsAny<object>(), true, It.IsAny<CancellationToken>()))
+            .Setup(p => p.GetContextAsync("contextb", It.IsAny<object>(), true, It.IsAny<CancellationToken>()))
             .ReturnsAsync("B");
         _contextProviderMock
-            .Setup(p => p.GetContextAsync("contextC", It.IsAny<object>(), false, It.IsAny<CancellationToken>()))
+            .Setup(p => p.GetContextAsync("contextc", It.IsAny<object>(), false, It.IsAny<CancellationToken>()))
             .ReturnsAsync("C");
 
         _httpMessageHandlerMock
@@ -238,11 +238,11 @@ public class PostAsyncShould
 
         result.Should().BeEquivalentTo(expectResult);
         _contextProviderMock
-            .Verify(p => p.GetContextAsync("contextA", It.IsAny<object>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
+            .Verify(p => p.GetContextAsync("contexta", It.IsAny<object>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
         _contextProviderMock
-            .Verify(p => p.GetContextAsync("contextB", It.IsAny<object>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
+            .Verify(p => p.GetContextAsync("contextb", It.IsAny<object>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
         _contextProviderMock
-            .Verify(p => p.GetContextAsync("contextC", It.IsAny<object>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
+            .Verify(p => p.GetContextAsync("contextc", It.IsAny<object>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
         _httpMessageHandlerMock.Verify(HttpMessageHandlerSendAsync, Times.Exactly(3));
     }
     
@@ -254,10 +254,10 @@ public class PostAsyncShould
         var expectResult = new Result
             { IntResult = 66, Contexts = new[] { "A", "B" } };
         _contextProviderMock
-            .Setup(p => p.GetContextAsync("contextA", It.IsAny<object>(), It.IsAny<bool>(),It.IsAny<CancellationToken>()))
+            .Setup(p => p.GetContextAsync("contexta", It.IsAny<object>(), It.IsAny<bool>(),It.IsAny<CancellationToken>()))
             .ReturnsAsync("A");
         _contextProviderMock
-            .Setup(p => p.GetContextAsync("contextB", It.IsAny<object>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            .Setup(p => p.GetContextAsync("contextb", It.IsAny<object>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync("B");
 
         _httpMessageHandlerMock
@@ -302,9 +302,9 @@ public class PostAsyncShould
 
         result.Should().BeEquivalentTo(expectResult);
         _contextProviderMock
-            .Verify(p => p.GetContextAsync("contextA", It.IsAny<object>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
+            .Verify(p => p.GetContextAsync("contexta", It.IsAny<object>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
         _contextProviderMock
-            .Verify(p => p.GetContextAsync("contextB", It.IsAny<object>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
+            .Verify(p => p.GetContextAsync("contextb", It.IsAny<object>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
         _httpMessageHandlerMock.Verify(HttpMessageHandlerSendAsync, Times.Exactly(2));
     }
 
@@ -315,7 +315,7 @@ public class PostAsyncShould
         var expectResult = new Result
             { IntResult = 66, Contexts = new[] { "A" } };
         _contextProviderMock
-            .Setup(p => p.GetContextAsync("contextA", It.IsAny<object>(), It.IsAny<bool>(),It.IsAny<CancellationToken>()))
+            .Setup(p => p.GetContextAsync("contexta", It.IsAny<object>(), It.IsAny<bool>(),It.IsAny<CancellationToken>()))
             .ReturnsAsync("A");
         
         _httpMessageHandlerMock
@@ -358,7 +358,7 @@ public class PostAsyncShould
 
         result.Should().BeEquivalentTo(expectResult);
         _contextProviderMock
-            .Verify(p => p.GetContextAsync("contextA", It.IsAny<object>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
+            .Verify(p => p.GetContextAsync("contexta", It.IsAny<object>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
         _httpMessageHandlerMock.Verify(HttpMessageHandlerSendAsync, Times.Exactly(2));
     }
 
@@ -369,10 +369,10 @@ public class PostAsyncShould
         var expectResult = new Result
             { IntResult = 66, Contexts = new[] { "A", "B" } };
         _contextProviderMock
-            .Setup(p => p.GetContextAsync("contextA", It.IsAny<object>(), It.IsAny<bool>(),It.IsAny<CancellationToken>()))
+            .Setup(p => p.GetContextAsync("contexta", It.IsAny<object>(), It.IsAny<bool>(),It.IsAny<CancellationToken>()))
             .ReturnsAsync("A");
         _contextProviderMock
-            .Setup(p => p.GetContextAsync("contextB", It.IsAny<object>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            .Setup(p => p.GetContextAsync("contextb", It.IsAny<object>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync("B");
         
         _httpMessageHandlerMock
@@ -430,9 +430,9 @@ public class PostAsyncShould
 
         result.Should().BeEquivalentTo(expectResult);
         _contextProviderMock
-            .Verify(p => p.GetContextAsync("contextA", It.IsAny<object>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
+            .Verify(p => p.GetContextAsync("contexta", It.IsAny<object>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
         _contextProviderMock
-            .Verify(p => p.GetContextAsync("contextB", It.IsAny<object>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
+            .Verify(p => p.GetContextAsync("contextb", It.IsAny<object>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
         _httpMessageHandlerMock.Verify(HttpMessageHandlerSendAsync, Times.Exactly(3));
     }
     
@@ -441,7 +441,7 @@ public class PostAsyncShould
     {
         var parameter = new Parameter { IntParameter = 66 };
         _contextProviderMock
-            .Setup(p => p.GetContextAsync("contextA", It.IsAny<object>(), It.IsAny<bool>(),It.IsAny<CancellationToken>()))
+            .Setup(p => p.GetContextAsync("contexta", It.IsAny<object>(), It.IsAny<bool>(),It.IsAny<CancellationToken>()))
             .ReturnsAsync("A");
 
 
@@ -466,7 +466,7 @@ public class PostAsyncShould
     {
         var parameter = new Parameter { IntParameter = 66 };
         _contextProviderMock
-            .Setup(p => p.GetContextAsync("contextA", It.IsAny<object>(), It.IsAny<bool>(),It.IsAny<CancellationToken>()))
+            .Setup(p => p.GetContextAsync("contexta", It.IsAny<object>(), It.IsAny<bool>(),It.IsAny<CancellationToken>()))
             .ReturnsAsync("A");
 
 
@@ -494,7 +494,7 @@ public class PostAsyncShould
     {
         var parameter = new Parameter { IntParameter = 66 };
         _contextProviderMock
-            .Setup(p => p.GetContextAsync("contextA", It.IsAny<object>(), It.IsAny<bool>(),It.IsAny<CancellationToken>()))
+            .Setup(p => p.GetContextAsync("contexta", It.IsAny<object>(), It.IsAny<bool>(),It.IsAny<CancellationToken>()))
             .ReturnsAsync("A");
 
 
@@ -518,7 +518,7 @@ public class PostAsyncShould
     {
         var parameter = new Parameter { IntParameter = 66 };
         _contextProviderMock
-            .Setup(p => p.GetContextAsync("contextA", It.IsAny<object>(), It.IsAny<bool>(),It.IsAny<CancellationToken>()))
+            .Setup(p => p.GetContextAsync("contexta", It.IsAny<object>(), It.IsAny<bool>(),It.IsAny<CancellationToken>()))
             .ReturnsAsync("A");
 
 

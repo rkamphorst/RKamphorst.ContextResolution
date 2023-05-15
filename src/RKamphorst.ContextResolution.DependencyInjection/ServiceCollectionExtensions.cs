@@ -50,7 +50,8 @@ public static class ServiceCollectionExtensions
             opts =>
                 opts.UseDistributedCache
                     ? sp.GetService<IDistributedCache>()
-                    : null
+                    : null,
+            sp.GetRequiredService<ILogger<ContextProviderCache>>()
         ));
         
         return services;
