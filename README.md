@@ -26,7 +26,7 @@ This repository provides a way in which:
   * multiple operations to execute that require context, and    
   * multiple context sources that may in turn require other context,
   
-  any context source is queried at most once, and context sources are queried in the correct order.
+any context source is queried at most once, and context sources are queried in the correct order.
 
 
 

@@ -238,11 +238,9 @@ public readonly struct ContextName
     
     private static IEnumerable<string> EnumerateAliasesForType(Type type)
     {
-        var shortName = type.FullName![(type.FullName.LastIndexOf('.') + 1)..];
-        if (shortName != type.FullName)
-        {
-            yield return shortName;
-        }
+        var shortName = type.FullName![(type.FullName!.LastIndexOf('.') + 1)..];
+        
+        yield return shortName;
 
         foreach (string name in OrderCustomAliasNames(
                     type.GetCustomAttributes<ContextNameAttribute>().Select(a => a.Name)
@@ -303,7 +301,7 @@ public readonly struct ContextName
                 .SelectMany(type => 
                     EnumerateAliasesForType(type)
                         .Select(name => (Name: name.Normalize().ToLowerInvariant(), Type: type))
-                ) // make a big list (uppercased) of names for each type
+                ) // make a big list (upper cased) of names for each type
                 .Where(t => !string.IsNullOrWhiteSpace(t.Name)) // discard types that have no suitable name
                 .Distinct() // make sure we have only unique tuples
                 .GroupBy(t => t.Name); // now, some names may have the same name, so we group them

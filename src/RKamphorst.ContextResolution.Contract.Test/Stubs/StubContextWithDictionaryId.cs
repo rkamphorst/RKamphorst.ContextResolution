@@ -2,5 +2,5 @@
 
 public class StubContextWithDictionaryId
 {
-    public IDictionary<string, object> Id { get; set; }
+    public IDictionary<string, object>? Id { get; set; }
 }

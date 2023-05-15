@@ -15,7 +15,7 @@ public class TryParseShould
         success.Should().BeTrue();
         result.HasValue.Should().BeTrue();
         result!.Value.GetLocalExpirationAtAge(TimeSpan.Zero).Should().Be(TimeSpan.Zero);
-        result!.Value.GetDistributedExpirationAtAge(TimeSpan.Zero).Should().Be(TimeSpan.Zero);
+        result.Value.GetDistributedExpirationAtAge(TimeSpan.Zero).Should().Be(TimeSpan.Zero);
     }
 
     [Theory]
@@ -34,7 +34,7 @@ public class TryParseShould
         result.HasValue.Should().BeTrue();
         var expectExpiration = TimeSpan.FromSeconds(expectExpirationSeconds);
         result!.Value.GetLocalExpirationAtAge(TimeSpan.Zero).Should().Be(expectExpiration);
-        result!.Value.GetDistributedExpirationAtAge(TimeSpan.Zero).Should().Be(expectExpiration);
+        result.Value.GetDistributedExpirationAtAge(TimeSpan.Zero).Should().Be(expectExpiration);
     }
 
     [Theory]
@@ -44,7 +44,7 @@ public class TryParseShould
     [InlineData("local transient")]
     public void FailForUnrecognizedInstruction(string instruction)
     {
-        var success = CacheInstruction.TryParse(instruction, out CacheInstruction? result);
+        var success = CacheInstruction.TryParse(instruction, out _);
 
         success.Should().BeFalse();
     }

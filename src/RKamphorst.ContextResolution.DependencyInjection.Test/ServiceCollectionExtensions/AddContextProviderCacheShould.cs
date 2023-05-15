@@ -38,7 +38,7 @@ public class AddContextProviderCacheShould
             .GetService<IContextProvider>();
 
         var context1 = await contextProvider!.GetContextAsync("StubContext", null);
-        var context2 = await contextProvider!.GetContextAsync("StubContext", null);
+        var context2 = await contextProvider.GetContextAsync("StubContext", null);
 
         context1.Should().BeEquivalentTo(context2);
         mockNamedContextSource.Verify(
@@ -72,7 +72,7 @@ public class AddContextProviderCacheShould
         var contextProvider = services
             .AddContextProvider()
             .AddTransient<INamedContextSource>(_ => mockNamedContextSource.Object)
-            .AddSingleton<IDistributedCache>(_ => mockDistributedCache.Object)
+            .AddSingleton(_ => mockDistributedCache.Object)
             .AddContextProviderCache(o =>
             {
                 o.UseDistributedCache = true;
@@ -82,7 +82,7 @@ public class AddContextProviderCacheShould
             .GetService<IContextProvider>();
 
         var context1 = await contextProvider!.GetContextAsync("StubContext", null);
-        var context2 = await contextProvider!.GetContextAsync("StubContext", null);
+        var context2 = await contextProvider.GetContextAsync("StubContext", null);
 
         context1.Should().BeEquivalentTo(context2);
         mockNamedContextSource.Verify(
