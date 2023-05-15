@@ -8,28 +8,27 @@ public class ContextCircularDependencyException : ContextResolutionException
     /// <summary>
     /// Constructor
     /// </summary>
-    /// <param name="contextPath">
-    /// The context path: the traversed context dependencies. See <see cref="ContextPath"/>
+    /// <param name="contextKeyPath">
+    /// The context path: the traversed context dependencies. See <see cref="ContextKeyPath"/>
     /// </param>
-    /// <param name="requestedContext">
+    /// <param name="requestedContextKey">
     /// The name of the context that was requested and caused this exception to be thrown.
-    /// See <see cref="RequestedContext"/>
+    /// See <see cref="RequestedContextKey"/>
     /// </param>
-    public ContextCircularDependencyException(Type[] contextPath, Type requestedContext) : base(
-        $"Circular dependency detected: {string.Join("->", contextPath.Select(t => t.Name))}->{requestedContext.Name}"
-    )
+    public ContextCircularDependencyException(ContextKey[] contextKeyPath, ContextKey requestedContextKey) 
+        : base($"Circular dependency detected: {string.Join("->", contextKeyPath)}->{requestedContextKey}")
     {
-        ContextPath = contextPath;
-        RequestedContext = requestedContext;
+        ContextKeyPath = contextKeyPath;
+        RequestedContextKey = requestedContextKey;
     }
 
     /// <summary>
     /// The context path: the traversed context dependencies.
     /// </summary>
-    public Type[] ContextPath { get; }
+    public ContextKey[] ContextKeyPath { get; }
     
     /// <summary>
     /// The context that was requested and caused this exception to be thrown.
     /// </summary>
-    public Type RequestedContext { get; }
+    public ContextKey RequestedContextKey { get; }
 }

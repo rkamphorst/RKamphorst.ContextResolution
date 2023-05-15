@@ -15,6 +15,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RKamphorst.ContextResolutio
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RKamphorst.ContextResolution.HttpApi.Test", "RKamphorst.ContextResolution.HttpApi.Test\RKamphorst.ContextResolution.HttpApi.Test.csproj", "{793469D9-C84A-4CA9-8D62-F3672F7FE35A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RKamphorst.ContextResolution.Contract.Test", "RKamphorst.ContextResolution.Contract.Test\RKamphorst.ContextResolution.Contract.Test.csproj", "{E32F502C-AC77-46BA-837C-8797E989FE90}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RKamphorst.ContextResolution.DependencyInjection.Test", "RKamphorst.ContextResolution.DependencyInjection.Test\RKamphorst.ContextResolution.DependencyInjection.Test.csproj", "{46053115-4808-45CB-9FB1-7858B34497B4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -48,6 +52,14 @@ Global
 		{793469D9-C84A-4CA9-8D62-F3672F7FE35A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{793469D9-C84A-4CA9-8D62-F3672F7FE35A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{793469D9-C84A-4CA9-8D62-F3672F7FE35A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E32F502C-AC77-46BA-837C-8797E989FE90}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E32F502C-AC77-46BA-837C-8797E989FE90}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E32F502C-AC77-46BA-837C-8797E989FE90}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E32F502C-AC77-46BA-837C-8797E989FE90}.Release|Any CPU.Build.0 = Release|Any CPU
+		{46053115-4808-45CB-9FB1-7858B34497B4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{46053115-4808-45CB-9FB1-7858B34497B4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{46053115-4808-45CB-9FB1-7858B34497B4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{46053115-4808-45CB-9FB1-7858B34497B4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 	EndGlobalSection

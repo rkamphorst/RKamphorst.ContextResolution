@@ -5,21 +5,21 @@ public class ContextNameAmbiguousException : ContextResolutionException
     /// <summary>
     /// Constructor
     /// </summary>
-    /// <param name="contextType">No type was found for given context name</param>
-    public ContextNameAmbiguousException(string contextName, IEnumerable<Type> types) : base(
-        $"There are multiple context types that are available under '{contextName}'")
+    /// <param name="aliases">No type was found for the combination of given context name aliases</param>
+    public ContextNameAmbiguousException(string[] aliases, IEnumerable<Type> types) : base(
+        $"There are multiple context types that are available under '{string.Join(",", aliases)}'")
     {
-        ContextName = contextName;
+        Aliases = aliases;
         ContextTypes = types.ToArray();
     }
 
     /// <summary>
-    /// Context name for which there are multiple contexts
+    /// Context name aliases for which there are multiple contexts
     /// </summary>
-    public string ContextName { get; }
+    public string[] Aliases { get; }
     
     /// <summary>
-    /// All types that have this same name
+    /// All types that match <see cref="Aliases"/>
     /// </summary>
     public Type[] ContextTypes { get; }
 }
